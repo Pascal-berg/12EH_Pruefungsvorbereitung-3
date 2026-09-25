@@ -1,0 +1,2381 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GAP 2 Trainer 03 – Warenfluss, Lager & Warenwirtschaft</title>
+<style>
+/* =====================================================================
+   GAP 2 TRAINER 01 – STYLES
+   Grundfarben: Dunkelblau / Anthrazit, Flächen Weiß / Hellgrau
+   Diagnosefarben (nur für Rückmeldung/Auswertung): Grün / Gelb / Rot
+   ===================================================================== */
+:root{
+  --blue-dark:#152A4A;
+  --blue-deep:#0D1E38;
+  --blue:#1E3A63;
+  --blue-mid:#2E5090;
+  --blue-soft:#EAF0F9;
+  --anthracite:#2B333A;
+  --surface:#FFFFFF;
+  --surface-soft:#F3F5F7;
+  --surface-alt:#E8ECF0;
+  --border:#D3D9DE;
+  --text:#20262C;
+  --text-soft:#5B6670;
+  --green-bg:#E6F4EA; --green-line:#2E7D32; --green-text:#1B5E20;
+  --yellow-bg:#FFF6DD; --yellow-line:#B98900; --yellow-text:#7A5B00;
+  --red-bg:#FBE7E7; --red-line:#B3261E; --red-text:#8C1D18;
+  --anschluss-bg:#EEF1F7; --anschluss-line:#4A5C7A;
+  --radius:10px;
+  --radius-sm:7px;
+  --focus:#0B63CE;
+  /* Zwei bewusst unterschiedliche, ausschließlich systemeigene Schriftfamilien:
+     Serifenschrift für Überschriften/Marke (seriöser, prüfungsnaher Charakter),
+     serifenlose Schrift für Bedien- und Lesetext (gute Lesbarkeit auf iPad). */
+  --font-head:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-body);
+  background:var(--surface-soft);
+  color:var(--text);
+  font-size:16px;
+  line-height:1.55;
+  -webkit-text-size-adjust:100%;
+}
+button, input, select, textarea{ font-family:inherit; font-size:16px; }
+button{ cursor:pointer; touch-action:manipulation; }
+:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
+h1,h2,h3{ font-family:var(--font-head); font-weight:700; letter-spacing:0.1px; }
+
+.app-shell{ max-width:920px; margin:0 auto; padding:0 16px 60px; }
+
+/* ---------- Kopfleiste / Timer ---------- */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  background:linear-gradient(180deg, var(--blue-dark), var(--blue-deep));
+  color:#fff;
+  padding:10px 16px; display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 10px rgba(0,0,0,0.22);
+  flex-wrap:wrap; gap:8px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.topbar .brand{ display:flex; align-items:center; gap:10px; }
+.topbar .brand-mark{
+  width:34px; height:34px; border-radius:8px; flex:0 0 auto;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22);
+  display:flex; align-items:center; justify-content:center;
+}
+.topbar .brand-text{ font-family:var(--font-head); font-weight:700; font-size:15.5px; letter-spacing:0.2px; line-height:1.2; }
+.topbar .brand-text small{ display:block; font-family:var(--font-body); font-weight:400; font-size:12.5px; color:#B9C4D6; }
+.timer-box{
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.25);
+  border-radius:8px; padding:6px 12px; font-variant-numeric:tabular-nums;
+}
+.timer-label{ font-size:12.5px; color:#C6D0E0; }
+.timer-value{ font-size:19px; font-weight:700; }
+.timer-box.warn{ background:#4A3A00; border-color:#B98900; }
+.timer-box.critical{ background:#5E1A1A; border-color:#B3261E; }
+
+.time-banner{
+  padding:10px 14px; border-radius:var(--radius); margin:10px 0; font-weight:600; font-size:15px;
+  border:1px solid transparent;
+}
+.time-banner.neutral{ background:var(--blue-soft); color:var(--blue-dark); border-color:var(--border); }
+.time-banner.yellow{ background:var(--yellow-bg); color:var(--yellow-text); border-color:var(--yellow-line); }
+.time-banner.orange{ background:#FFE8CF; color:#7A3E00; border-color:#C9720A; }
+.time-banner.red{ background:var(--red-bg); color:var(--red-text); border-color:var(--red-line); }
+
+.autosave-note{
+  max-width:920px; margin:8px auto 0; padding:0 16px; font-size:12.5px; color:var(--text-soft);
+  text-align:right;
+}
+
+/* ---------- Progress ---------- */
+.progress-wrap{ margin:18px 0 10px; }
+.progress-meta{ display:flex; justify-content:space-between; align-items:baseline; font-size:13.5px; color:var(--text-soft); margin-bottom:8px; }
+.progress-meta .step-label{ font-weight:700; color:var(--blue-dark); font-variant-numeric:tabular-nums; }
+.progress-track{
+  height:8px; background:var(--surface-alt); border-radius:6px; overflow:hidden; position:relative;
+  display:flex; gap:3px; padding:0;
+}
+.progress-seg{ flex:1 1 0; height:100%; background:var(--surface-alt); border-radius:3px; transition:background .25s ease; }
+.progress-seg.done{ background:var(--blue-mid); }
+.progress-seg.current{ background:var(--blue-soft); box-shadow:inset 0 0 0 2px var(--blue-mid); }
+
+/* ---------- Karten / Aufgaben ---------- */
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:22px; margin:16px 0; box-shadow:0 1px 3px rgba(20,30,45,0.06);
+  border-top:3px solid var(--blue-mid);
+}
+.task-header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:6px; flex-wrap:wrap;}
+.task-header h2{ margin:0; font-size:21px; color:var(--blue-dark); }
+.badge-bereich{
+  display:inline-block; font-size:12.5px; font-weight:700; color:#fff;
+  background:var(--blue-mid); padding:4px 11px; border-radius:20px; white-space:nowrap;
+  letter-spacing:0.15px;
+}
+.badge-anschluss{ background:var(--anthracite); }
+.situation-box{
+  background:var(--anschluss-bg); border-left:4px solid var(--blue-mid);
+  padding:12px 14px; border-radius:6px; margin:10px 0 18px; font-size:15.5px;
+}
+.anschluss-banner{
+  background:var(--anschluss-bg); border:1px dashed var(--anschluss-line); color:var(--anschluss-line);
+  padding:10px 14px; border-radius:8px; font-weight:700; font-size:14.5px; margin-bottom:14px;
+}
+
+.part{ border-top:1px solid var(--border); padding-top:16px; margin-top:16px; }
+.part:first-of-type{ border-top:none; margin-top:0; padding-top:0; }
+.part h3{ margin:0 0 8px; font-size:16.5px; color:var(--anthracite); }
+.part .points-tag{ font-size:13px; color:var(--text-soft); font-weight:600; }
+.prompt{ margin:6px 0 12px; }
+
+textarea, input[type=text], input[type=number], select{
+  width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px;
+  background:#fff; color:var(--text); transition:border-color .15s ease, box-shadow .15s ease;
+}
+textarea{ min-height:90px; resize:vertical; }
+input[type=text]:focus, textarea:focus, select:focus{ border-color:var(--blue-mid); box-shadow:0 0 0 3px rgba(46,80,144,0.12); }
+
+.field-row{ display:flex; align-items:center; gap:8px; margin:8px 0; flex-wrap:wrap; }
+.field-row label{ flex:1 1 220px; font-size:14.5px; }
+.field-row .input-wrap{ flex:1 1 160px; display:flex; align-items:center; gap:6px; min-width:140px; }
+.field-row .unit{ font-size:14px; color:var(--text-soft); min-width:16px; }
+.field-row input{ min-height:44px; }
+
+.table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:10px 0; border:1px solid var(--border); border-radius:8px;}
+table.calc-table{ border-collapse:collapse; width:100%; min-width:560px; }
+table.calc-table th, table.calc-table td{
+  border-bottom:1px solid var(--border); padding:9px 10px; text-align:left; font-size:14.5px;
+}
+table.calc-table th{ background:var(--surface-soft); font-weight:700; color:var(--anthracite); }
+table.calc-table td.given{ color:var(--text-soft); }
+table.calc-table input{ min-width:100px; min-height:42px; }
+table.data-table{ border-collapse:collapse; width:100%; min-width:480px; }
+table.data-table th, table.data-table td{ border:1px solid var(--border); padding:8px 10px; font-size:14.5px; text-align:center; }
+table.data-table th{ background:var(--surface-soft); }
+table.data-table td:first-child, table.data-table th:first-child{ text-align:left; }
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  min-height:46px; padding:10px 20px; border-radius:8px; border:1.5px solid var(--blue-mid);
+  background:var(--blue-mid); color:#fff; font-weight:700; font-size:15px;
+  transition:background .15s ease, transform .05s ease, box-shadow .15s ease;
+}
+.btn:hover:not(:disabled){ background:var(--blue-dark); border-color:var(--blue-dark); }
+.btn:active:not(:disabled){ transform:translateY(1px); }
+.btn:disabled{ opacity:0.42; cursor:not-allowed; }
+.btn.secondary{ background:#fff; color:var(--blue-mid); }
+.btn.secondary:hover:not(:disabled){ background:var(--blue-soft); color:var(--blue-dark); }
+.btn.ghost{ background:transparent; color:var(--blue-dark); border-color:var(--border); }
+.btn.ghost:hover:not(:disabled){ background:var(--surface-alt); }
+.btn.danger{ background:#fff; color:var(--red-line); border-color:var(--red-line); }
+.btn.danger:hover:not(:disabled){ background:var(--red-bg); }
+.btn.wide{ width:100%; }
+.btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+
+.feedback{
+  margin-top:8px; padding:10px 12px; border-radius:8px; font-size:14.5px; border:1px solid transparent;
+}
+.feedback.correct{ background:var(--green-bg); border-color:var(--green-line); color:var(--green-text); }
+.feedback.partial{ background:var(--yellow-bg); border-color:var(--yellow-line); color:var(--yellow-text); }
+.feedback.wrong{ background:var(--red-bg); border-color:var(--red-line); color:var(--red-text); }
+
+.criteria-box{
+  background:var(--surface-soft); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin-top:10px;
+}
+.criteria-box ul{ margin:8px 0 4px; padding-left:20px; }
+.criteria-note{ font-style:italic; color:var(--text-soft); font-size:13.5px; margin-top:8px; }
+
+.self-assess{ margin-top:12px; }
+.self-assess .options{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.self-assess label{
+  display:flex; align-items:center; gap:6px; border:1.5px solid var(--border); border-radius:8px;
+  padding:9px 12px; font-size:14px; min-height:44px; background:#fff; transition:border-color .12s ease, background .12s ease;
+}
+.self-assess label:has(input:checked){ border-color:var(--blue-mid); background:var(--blue-soft); font-weight:700; }
+.self-assess input{ width:auto; }
+
+.confidence{ margin-top:12px; }
+.confidence .options{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.confidence label{
+  display:flex; align-items:center; gap:6px; border:1.5px solid var(--border); border-radius:8px;
+  padding:9px 12px; font-size:14px; min-height:44px; background:#fff; transition:border-color .12s ease, background .12s ease;
+}
+.confidence label:has(input:checked){ border-color:var(--blue-mid); background:var(--blue-soft); font-weight:700; }
+.confidence input{ width:auto; }
+
+.nav-row{ display:flex; justify-content:space-between; margin:20px 0 10px; gap:10px; }
+.finish-early-row{ text-align:center; margin:0 0 40px; }
+.back-to-results-row{ margin:14px 0 40px; }
+.review-banner{
+  background:var(--blue-soft); border:1px solid var(--blue-mid); color:var(--blue-dark);
+  padding:10px 14px; border-radius:8px; font-size:14px; font-weight:600; margin-bottom:14px;
+}
+.part.review-highlight{
+  background:var(--blue-soft); border-radius:8px; margin-left:-14px; margin-right:-14px; padding:16px 14px;
+  box-shadow:inset 0 0 0 2px var(--blue-mid);
+}
+.link-btn{
+  background:none; border:none; padding:8px; color:var(--text-soft); font-size:13px;
+  text-decoration:underline; text-underline-offset:3px; min-height:36px;
+}
+.link-btn:hover{ color:var(--blue-mid); }
+
+/* ---------- Startseite / Abschluss ---------- */
+.hero{ text-align:left; padding:30px 4px 8px; border-bottom:1px solid var(--border); margin-bottom:6px; }
+.hero h1{ color:var(--blue-dark); font-size:28px; margin:4px 0 2px; }
+.hero .sub{ color:var(--blue-mid); font-size:16px; margin-bottom:18px; font-weight:600; }
+.info-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0; }
+@media (max-width:520px){ .info-grid{ grid-template-columns:1fr; } }
+.info-item{
+  background:var(--surface-soft); border:1px solid var(--border); border-left:3px solid var(--blue-mid);
+  border-radius:6px; padding:10px 12px; font-size:14.5px;
+}
+.checkbox-row{ display:flex; gap:10px; align-items:flex-start; margin:18px 0; }
+.checkbox-row input{ width:22px; height:22px; margin-top:2px; }
+
+.dashboard-header{ text-align:left; margin:24px 0 6px; }
+.dashboard-header h1{ color:var(--blue-dark); font-size:25px; margin:0 0 4px; }
+.score-hero{ display:flex; gap:20px; align-items:center; flex-wrap:wrap; margin:14px 0 20px; }
+.score-ring{
+  width:118px; height:118px; border-radius:50%; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center;
+  background:conic-gradient(var(--blue-mid) calc(var(--pct,0) * 1%), var(--surface-alt) 0);
+}
+.score-ring .score-inner{
+  width:92px; height:92px; border-radius:50%; background:#fff;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  box-shadow:inset 0 0 0 1px var(--border);
+}
+.score-ring .pct{ font-size:24px; font-weight:800; color:var(--blue-dark); font-variant-numeric:tabular-nums; }
+.score-ring .lbl{ font-size:11px; color:var(--text-soft); }
+.score-text{ font-size:15px; color:var(--text-soft); }
+
+.area-card{
+  border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin:10px 0;
+  border-left-width:6px;
+}
+.area-card.green{ border-left-color:var(--green-line); }
+.area-card.yellow{ border-left-color:var(--yellow-line); }
+.area-card.red{ border-left-color:var(--red-line); }
+.area-card .row1{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+.area-card .name{ font-weight:700; font-size:15.5px; }
+.area-pct{ font-weight:800; font-size:15.5px; }
+.area-tag{
+  display:inline-block; font-size:12.5px; font-weight:700; padding:3px 9px; border-radius:20px; margin-top:4px;
+}
+.area-tag.green{ background:var(--green-bg); color:var(--green-text); }
+.area-tag.yellow{ background:var(--yellow-bg); color:var(--yellow-text); }
+.area-tag.red{ background:var(--red-bg); color:var(--red-text); }
+.area-note{ font-size:14px; margin-top:8px; color:var(--text); }
+.flag-note{ font-size:13.5px; margin-top:6px; padding:8px 10px; border-radius:6px; background:#FFF3E0; color:#7A3E00; border:1px solid #C9720A; }
+.area-card.clickable{ cursor:pointer; transition:box-shadow .15s ease, transform .05s ease; }
+.area-card.clickable:hover{ box-shadow:0 2px 10px rgba(20,30,45,0.12); transform:translateY(-1px); }
+.review-link-hint{ font-size:12.5px; color:var(--blue-mid); font-weight:700; margin-top:10px; }
+
+.anschluss-result{ background:var(--anschluss-bg); border:1px dashed var(--anschluss-line); border-radius:10px; padding:14px 16px; margin:16px 0; }
+
+.diag-banner{
+  background:var(--surface-soft); border:1px solid var(--border); border-left:4px solid var(--blue-mid);
+  border-radius:6px; padding:9px 12px; font-size:13.5px; color:var(--text-soft); margin:10px 0;
+}
+
+.lernplan-box{ display:none; margin-top:16px; }
+.lernplan-item{ background:var(--surface-soft); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin:8px 0; }
+.lernplan-item .rank{ font-weight:800; color:var(--blue-mid); margin-right:6px; }
+
+.footer-note{ font-size:12.5px; color:var(--text-soft); margin-top:30px; text-align:center; }
+
+@media print{
+  .topbar, .nav-row, .no-print, .btn-row, .autosave-note, .review-banner, .review-link-hint{ display:none !important; }
+  body{ background:#fff; }
+  .card{ box-shadow:none; break-inside:avoid; border-top-color:var(--border); }
+  .area-card{ break-inside:avoid; }
+  .app-shell{ max-width:100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar" id="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 19V5l8 5 8-5v14" stroke="#EAF0F9" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span class="brand-text">GAP 2 Trainer 03<small>Warenfluss, Lager & Warenwirtschaft · MainRetail Sport & Lifestyle GmbH</small></span>
+  </div>
+  <div class="timer-box" id="timerBox">
+    <span class="timer-label">Verbleibende Zeit</span>
+    <span class="timer-value" id="timerValue">60:00</span>
+  </div>
+</div>
+<div class="autosave-note no-print" id="autosaveNote" style="display:none;">Ihre Eingaben werden fortlaufend automatisch auf diesem Gerät gespeichert.</div>
+
+<div class="app-shell">
+  <div id="timeBannerSlot"></div>
+
+  <!-- ================= STARTSEITE ================= -->
+  <section id="screenStart" class="hero">
+    <h1>GAP 2 Trainer 03</h1>
+    <div class="sub">Warenfluss, Lager & Warenwirtschaft</div>
+    <p>Dieser Trainer ist eine umfangreichere, prüfungsnahe Trainingssimulation mit Schwerpunkt Beschaffung, Lager und Warenwirtschaft.</p>
+    <p>Sie erhalten keine Note. 100 Punkte sind Diagnosepunkte – keine Schulnote und keine IHK-Note. Ziel ist, persönliche Stärken und Übungsbereiche zu erkennen.</p>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Was Sie erwartet</h3>
+      <div class="info-grid">
+        <div class="info-item">6 Aufgabenbereiche</div>
+        <div class="info-item">ca. 90 Minuten Bearbeitungszeit</div>
+        <div class="info-item">100 Diagnosepunkte</div>
+        <div class="info-item">Rechnen</div>
+        <div class="info-item">Auswerten</div>
+        <div class="info-item">Beurteilen</div>
+        <div class="info-item">Entscheiden</div>
+        <div class="info-item">ein komplexer Transferfall am Ende</div>
+        <div class="info-item">Sie arbeiten als Mitarbeiter/in der MainRetail Sport & Lifestyle GmbH, Darmstadt</div>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="chkSelfDirected">
+        <label for="chkSelfDirected">Ich bearbeite die Aufgaben zunächst selbstständig und öffne Lösungshinweise erst nach meiner eigenen Antwort.</label>
+      </div>
+
+      <button class="btn wide" id="btnStart" disabled>Trainer starten</button>
+      <p style="font-size:13px;color:var(--text-soft);margin-top:10px;">Ihre Eingaben werden ausschließlich lokal auf diesem Gerät gespeichert. Es werden keine Daten übertragen.</p>
+    </div>
+  </section>
+
+  <!-- ================= AUFGABENBEREICH ================= -->
+  <section id="screenTasks" style="display:none;">
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span class="step-label" id="taskCounter">Aufgabe 1 von 6</span>
+        <span id="taskAreaLabel"></span>
+      </div>
+      <div class="progress-track" id="progressTrack"></div>
+    </div>
+
+    <div id="taskContainer"></div>
+
+    <div class="nav-row no-print">
+      <button class="btn ghost" id="btnBack">← Zurück</button>
+      <button class="btn" id="btnNext">Weiter →</button>
+    </div>
+    <div class="finish-early-row no-print" id="finishEarlyRow">
+      <button class="link-btn" id="btnFinishEarly">Trainer vorzeitig beenden und zur Auswertung springen</button>
+    </div>
+    <div class="back-to-results-row no-print" id="backToResultsRow" style="display:none;">
+      <button class="btn secondary wide" id="btnBackToResults">← Zurück zur Auswertung</button>
+    </div>
+  </section>
+
+  <!-- ================= AUSWERTUNG ================= -->
+  <section id="screenResults" style="display:none;">
+    <div class="dashboard-header">
+      <h1>Ihr persönlicher GAP-2-Check – Trainer 03</h1>
+      <div class="score-hero">
+        <div class="score-ring" id="scoreRing">
+          <div class="score-inner"><span class="pct" id="totalPct">0 %</span><span class="lbl">Gesamt</span></div>
+        </div>
+        <div class="score-text" id="totalText">0 von 100 Diagnosepunkten</div>
+      </div>
+      <p style="font-size:13px;color:var(--text-soft);margin-top:-6px;">100 Punkte sind Diagnosepunkte – keine Schulnote und keine IHK-Note.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Diagnosebereiche</h3>
+      <div id="areaResults"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Detaildiagnose nach Unterthemen</h3>
+      <p style="font-size:14px;color:var(--text-soft);margin-top:0;">Diese Übersicht zeigt Ihr Ergebnis je Unterthema – so werden gezielte Übungsschwerpunkte sichtbar, statt nur den gesamten Bereich zu bewerten.</p>
+      <div id="topicResults"></div>
+    </div>
+
+    <div class="card">
+      <button class="btn wide secondary no-print" id="btnShowLernplan">Meine Lernschwerpunkte anzeigen</button>
+      <div class="lernplan-box" id="lernplanBox">
+        <h3>Das sollten Sie als Nächstes wiederholen</h3>
+        <div id="lernplanList"></div>
+      </div>
+    </div>
+
+    <div class="btn-row no-print">
+      <button class="btn secondary" id="btnPrint">Auswertung drucken / PDF</button>
+      <button class="btn secondary" id="btnSaveFile">Ergebnis lokal speichern</button>
+      <button class="btn danger" id="btnRestart">Trainer neu starten</button>
+    </div>
+
+    <div class="card no-print" id="saveFileCard" style="display:none;">
+      <label for="studentTag" style="font-weight:600;">Name oder Kürzel (optional)</label>
+      <input type="text" id="studentTag" placeholder="z. B. AB oder Vorname" style="margin-top:6px;">
+      <p style="font-size:13px;color:var(--text-soft);">Die Eingabe ist freiwillig und wird ausschließlich lokal auf diesem Gerät verarbeitet.</p>
+      <button class="btn" id="btnDoSaveFile">Datei jetzt speichern</button>
+    </div>
+
+    <p class="footer-note">GAP 2 Trainer 03 – Diagnose-Werkzeug ohne Notenvergabe · 100 Punkte sind Diagnosepunkte, keine Schulnote · alle Daten verbleiben ausschließlich auf diesem Gerät</p>
+  </section>
+
+  <div class="btn-row no-print" style="justify-content:center;margin-top:10px;">
+    <button class="btn ghost" id="btnRestartGlobal" style="font-size:13px;">Fortschritt löschen / Trainer neu starten</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   GAP 2 TRAINER 01 – LOGIK
+   -----------------------------------------------------------------
+   Dieses Skript ist bewusst kommentiert, damit eine Lehrkraft später
+   Aufgaben, Musterlösungen, Toleranzen und Punkte ändern kann, ohne
+   den gesamten Code lesen zu müssen. Alle Inhalte stehen im Objekt
+   "CONFIG" weiter unten. Der restliche Code (ab "ENGINE") ist generisch
+   und muss für inhaltliche Änderungen normalerweise NICHT angepasst
+   werden.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   1) GRUNDEINSTELLUNGEN
+   --------------------------------------------------------------------- */
+const STORAGE_KEY = "gap2_trainer03_state_v1";
+const TOTAL_SECONDS = 90 * 60; // Gesamtbearbeitungszeit: 90 Minuten. Hier änderbar.
+
+// Toleranzen für automatische Zahlenbewertung (Kapitel 9 des Lastenhefts)
+const TOL_EURO = 0.02;     // ± bei Eurobeträgen
+const TOL_PROZENT = 0.05;  // ± bei Prozentwerten
+const TOL_ZAHL = 0.05;     // ± bei sonstigen Zahlen (z. B. Lagerumschlag)
+const TOL_TAGE = 0.5;      // ± bei Tagesangaben (z. B. Lagerdauer)
+const TOL_STUECK = 0.05;   // ± bei Stückzahlen (z. B. Inventurdifferenz in Stück)
+
+/* ---------------------------------------------------------------------
+   2) INHALTLICHE KONFIGURATION: AUFGABEN, LÖSUNGEN, PUNKTE
+   Hier kann eine Lehrkraft Texte, Lösungen, Punkte und Toleranzen
+   anpassen, ohne die restliche Logik zu verändern.
+   --------------------------------------------------------------------- */
+const CONFIG = {
+  tasks: [
+    /* ================= AUFGABE 1 – BESCHAFFUNGS- UND BESTANDSPLANUNG ================= */
+    {
+      id: "a1", area: "beschaffung", areaName: "Beschaffungs- und Bestandsplanung",
+      title: "Aufgabe 1 · Beschaffungs- und Bestandsplanung", maxPoints: 15,
+      situation: "Die MainRetail GmbH verkauft die Outdoor-Trinkflasche Pro sehr erfolgreich.",
+      parts: [
+        {
+          id: "p1_1", kind: "numberGroup", points: 3, topic: "Meldebestand",
+          title: "1.1 Meldebestand",
+          prompt: "Durchschnittlicher Tagesabsatz: 6 Stück · Lieferzeit: 5 Tage · Mindestbestand: 12 Stück · aktueller Bestand: 37 Stück · offene Kundenbestellungen: 4 Stück. Berechnen Sie den Meldebestand. Geben Sie den Rechenweg in Ihren Notizen an.",
+          fieldPointsEach: 3,
+          fields: [
+            { id: "meldebestand", label: "Meldebestand", unit: "Stück", expected: 42, tol: TOL_STUECK,
+              hint: "Meldebestand = (durchschnittlicher Tagesabsatz × Lieferzeit) + Mindestbestand." }
+          ],
+          confidence: true
+        },
+        {
+          id: "p1_2", kind: "selectOpen", points: 3, topic: "Meldebestand",
+          title: "1.2 Bestellentscheidung",
+          table: null,
+          selectPrompt: "Beurteilen Sie anhand Ihrer Berechnung aus 1.1, ob aktuell eine Bestellung ausgelöst werden sollte.",
+          selectOptions: ["Ja, eine Bestellung sollte jetzt ausgelöst werden", "Nein, aktuell ist keine Bestellung nötig"],
+          correctSelect: "Ja, eine Bestellung sollte jetzt ausgelöst werden",
+          selectPoints: 1,
+          openPrompt: "Begründen Sie Ihre Entscheidung fachlich.",
+          openPoints: 2,
+          criteria: {
+            groups: [{ label: "Erwartung:", items: ["Der aktuelle Bestand (37 Stück) liegt unter dem berechneten Meldebestand (42 Stück).", "Sobald der Bestand den Meldebestand unterschreitet, sollte eine Bestellung ausgelöst werden."] }],
+            note: "Andere fachlich sinnvolle Formulierungen sind ebenfalls richtig."
+          }
+        },
+        {
+          id: "p1_3", kind: "open", points: 4, topic: "Mindestbestand",
+          title: "1.3 Mindestbestand",
+          prompt: "Erläutern Sie zwei Funktionen des Mindestbestandes für ein Einzelhandelsunternehmen.",
+          criteria: {
+            groups: [{ label: "mögliche Funktionen:", items: ["dient als Sicherheitsbestand", "überbrückt Lieferverzögerungen", "überbrückt unerwartet hohe Nachfrage", "sichert die Verkaufsbereitschaft", "verhindert Fehlbestände"] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein."
+          }
+        },
+        {
+          id: "p1_4", kind: "open", points: 5, topic: "Beschaffungsdaten",
+          title: "1.4 Warenwirtschaftssystem",
+          prompt: "Die Einkaufsleiterin möchte Bestellentscheidungen stärker auf Daten aus dem Warenwirtschaftssystem stützen. Nennen Sie fünf Informationen bzw. Daten, die bei der Beschaffungsplanung hilfreich sein können.",
+          criteria: {
+            groups: [{ label: "mögliche Daten:", items: ["aktueller Bestand", "Mindestbestand", "Meldebestand", "Verkaufszahlen", "durchschnittlicher Absatz", "saisonale Absatzentwicklung", "offene Bestellungen", "Lieferzeiten", "Lieferantendaten", "Renner-/Penner-Auswertungen"] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein."
+          }
+        }
+      ]
+    },
+
+    /* ================= AUFGABE 2 – WARENANNAHME UND VERTRAGSSTÖRUNGEN ================= */
+    {
+      id: "a2", area: "warenannahme", areaName: "Warenannahme und Vertragsstörungen",
+      title: "Aufgabe 2 · Warenannahme und Vertragsstörungen", maxPoints: 12,
+      situation: "Die MainRetail GmbH bestellt bei einem Lieferanten 100 Fitnessmatten. Am Dienstag trifft die Lieferung ein. Der Lieferschein weist 100 Fitnessmatten aus. Tatsächlich befinden sich jedoch nur 96 Matten in der Lieferung. Außerdem sind bei vier Matten die Verpackungen stark beschädigt. Bei zwei dieser vier Matten sind auch die Matten selbst eingerissen.",
+      parts: [
+        {
+          id: "p2_1", kind: "open", points: 3, topic: "Warenannahme",
+          title: "2.1 Warenannahme",
+          prompt: "Nennen Sie drei Kontrollen, die bei der Warenannahme durchgeführt werden sollten.",
+          criteria: {
+            groups: [{ label: "mögliche Kontrollen:", items: ["Empfänger prüfen", "Ware prüfen", "Menge prüfen", "Verpackung prüfen", "sichtbare Schäden prüfen", "Lieferschein prüfen", "Liefertermin prüfen"] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein."
+          }
+        },
+        {
+          id: "p2_2", kind: "open", points: 2, topic: "Warenannahme",
+          title: "2.2 Abweichungen feststellen",
+          prompt: "Nennen Sie die zwei wesentlichen Abweichungen, die bei dieser Lieferung festgestellt werden.",
+          criteria: {
+            groups: [{ label: "Erwartung:", items: ["Mindermenge (4 Matten fehlen)", "beschädigte bzw. mangelhafte Ware (beschädigte Verpackungen, teils eingerissene Matten)"] }],
+            note: "Andere fachlich sinnvolle Formulierungen sind ebenfalls richtig."
+          }
+        },
+        {
+          id: "p2_3", kind: "open", points: 4, topic: "Vertragsstörungen",
+          title: "2.3 Vorgehen des Einzelhändlers",
+          prompt: "Beschreiben Sie vier sinnvolle Maßnahmen, die die MainRetail GmbH aufgrund der festgestellten Abweichungen ergreifen sollte.",
+          criteria: {
+            groups: [{ label: "mögliche Maßnahmen:", items: ["Mangel dokumentieren", "Fotos/Beweise sichern", "Lieferanten informieren", "Mängel anzeigen (Mängelrüge)", "Nachlieferung verlangen", "Ersatzlieferung verlangen", "mangelhafte Ware getrennt lagern"] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein."
+          }
+        },
+        {
+          id: "p2_4", kind: "open", points: 3, topic: "Datenqualität WWS",
+          title: "2.4 Wareneingang im Warenwirtschaftssystem",
+          prompt: "Erläutern Sie, warum die tatsächlich eingegangene Warenmenge im Warenwirtschaftssystem korrekt erfasst werden muss. Nennen Sie dabei drei mögliche Auswirkungen fehlerhafter Bestandsdaten.",
+          criteria: {
+            groups: [{ label: "mögliche Auswirkungen:", items: ["falsche Bestellentscheidungen", "Fehlbestände", "Überbestände", "falsche Inventurdaten", "fehlerhafte Auswertungen", "falsche Renner-/Penner-Analyse"] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein."
+          }
+        }
+      ]
+    },
+
+    /* ================= AUFGABE 3 – LAGERKENNZAHLEN UND LAGERWIRTSCHAFT ================= */
+    {
+      id: "a3", area: "lager", areaName: "Lagerkennzahlen und Lagerwirtschaft",
+      title: "Aufgabe 3 · Lagerkennzahlen und Lagerwirtschaft", maxPoints: 23,
+      situation: "Für die Warengruppe Outdoor liegen folgende Daten vor: Anfangsbestand 120.000 € · Ende 1. Quartal 100.000 € · Ende 2. Quartal 90.000 € · Ende 3. Quartal 80.000 € · Endbestand 70.000 €. Der Wareneinsatz des Jahres beträgt 736.000 €. Der kalkulatorische Zinssatz beträgt 6 %. Verwenden Sie 360 Tage pro Jahr.",
+      parts: [
+        {
+          id: "p3_1", kind: "numberGroup", points: 13,
+          title: "3.1–3.4 Lagerkennzahlen berechnen",
+          prompt: "Berechnen Sie den durchschnittlichen Lagerbestand (Anfangsbestand + vier Quartalsendbestände, geteilt durch 5), die Umschlagshäufigkeit, die durchschnittliche Lagerdauer und die Lagerzinsen.",
+          fields: [
+            { id: "avgBestand", label: "durchschnittlicher Lagerbestand", unit: "€", expected: 92000.00, tol: TOL_EURO, points: 4, topic: "Lagerbestand",
+              hint: "Summe aus Anfangsbestand und den vier Quartalsendbeständen, geteilt durch 5." },
+            { id: "umschlag", label: "Umschlagshäufigkeit", unit: "", expected: 8, tol: TOL_ZAHL, points: 3, topic: "Lagerumschlag",
+              dependsOn: "avgBestand", dependFormula: "constDividedByPrev", dependConstant: 736000,
+              hint: "Umschlagshäufigkeit = Wareneinsatz ÷ durchschnittlicher Lagerbestand." },
+            { id: "lagerdauer", label: "durchschnittliche Lagerdauer", unit: "Tage", expected: 45, tol: TOL_TAGE, points: 3, topic: "Lagerdauer",
+              dependsOn: "umschlag", dependFormula: "constDividedByPrev", dependConstant: 360,
+              hint: "Lagerdauer = 360 Tage ÷ Umschlagshäufigkeit." },
+            { id: "lagerzinsen", label: "Lagerzinsen", unit: "€", expected: 690.00, tol: TOL_EURO, points: 3, topic: "Lagerzinsen",
+              dependsOn: "avgBestand", dependFormula: "lagerzinsenFormula", dependExtraField: "lagerdauer", dependZinssatz: 6,
+              hint: "Lagerzinsen = durchschnittlicher Lagerbestand × Zinssatz × Lagerdauer ÷ 360." }
+          ],
+          confidence: true
+        },
+        {
+          id: "p3_5", kind: "open", points: 4, topic: "Lagerkennzahlen beurteilen",
+          title: "3.5 Entwicklung beurteilen",
+          prompt: "Im Vorjahr betrug die Umschlagshäufigkeit 10-mal. Beurteilen Sie die Entwicklung der Lagerhaltung. Nennen Sie zwei mögliche negative Folgen der Entwicklung.",
+          criteria: {
+            groups: [{ label: "Erwartung:", items: ["Der Umschlag ist von 10 auf 8 gesunken – die Lagerhaltung hat sich verschlechtert."] }, { label: "mögliche negative Folgen:", items: ["Lagerdauer steigt", "Kapitalbindung steigt", "Lagerkosten steigen", "Lagerzinsen steigen", "Lagerrisiko steigt", "Liquidität sinkt", "Veralterungsrisiko steigt"] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein."
+          }
+        },
+        {
+          id: "p3_6", kind: "open", points: 6, topic: "Lageroptimierung",
+          title: "3.6 Maßnahmen zur Lageroptimierung",
+          prompt: "Die Geschäftsführung möchte die Lagerdauer verkürzen. Entwickeln Sie drei konkrete Maßnahmen, mit denen die MainRetail GmbH ihre Lagerbestände reduzieren kann. Begründen Sie jede Maßnahme kurz.",
+          criteria: {
+            groups: [{ label: "mögliche Maßnahmen:", items: ["Bestellmengen reduzieren", "häufiger kleinere Mengen bestellen", "Pennerbestände abbauen", "Sortimentsbereinigung", "bessere Absatzprognosen", "Bestellrhythmus anpassen", "Melde-/Mindestbestände überprüfen", "Lieferanten mit kürzeren Lieferzeiten wählen"] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein. Je Maßnahme zählt auch die Begründung."
+          }
+        }
+      ]
+    },
+
+    /* ================= AUFGABE 4 – INVENTUR, WARENWIRTSCHAFT UND DATENANALYSE ================= */
+    {
+      id: "a4", area: "inventur", areaName: "Inventur, Warenwirtschaft und Datenanalyse",
+      title: "Aufgabe 4 · Inventur, Warenwirtschaft und Datenanalyse", maxPoints: 18,
+      situation: "Bei der Inventur wird der Artikel Fitness Tracker Basic überprüft. Buchbestand laut WWS: 128 Stück · tatsächlicher Inventurbestand: 121 Stück · Einstandspreis je Stück: 42,00 €.",
+      parts: [
+        {
+          id: "p4_1", kind: "numberGroup", points: 4, topic: "Inventurdifferenz",
+          title: "4.1 Inventurdifferenz",
+          prompt: "Berechnen Sie a) die mengenmäßige Inventurdifferenz und b) die wertmäßige Inventurdifferenz.",
+          fieldPointsEach: 2,
+          fields: [
+            { id: "mengenDiff", label: "mengenmäßige Inventurdifferenz", unit: "Stück", expected: 7, tol: TOL_STUECK,
+              hint: "Mengenmäßige Differenz = Buchbestand − Inventurbestand." },
+            { id: "wertDiff", label: "wertmäßige Inventurdifferenz", unit: "€", expected: 294.00, tol: TOL_EURO,
+              dependsOn: "mengenDiff", dependFactor: 42.00,
+              hint: "Wertmäßige Differenz = mengenmäßige Differenz × Einstandspreis je Stück." }
+          ],
+          confidence: true
+        },
+        {
+          id: "p4_2", kind: "open", points: 3, topic: "Inventurdifferenz",
+          title: "4.2 Ursachen",
+          prompt: "Nennen Sie drei mögliche Ursachen für den festgestellten Fehlbestand.",
+          criteria: {
+            groups: [{ label: "mögliche Ursachen:", items: ["Diebstahl", "Bruch", "Schwund", "Kassierfehler", "Buchungsfehler", "Wareneingangsfehler", "Zählfehler"] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein."
+          }
+        },
+        {
+          id: "p4_3", kind: "open", points: 4, topic: "Inventurdifferenz",
+          title: "4.3 Maßnahmen",
+          prompt: "Entwickeln Sie zwei geeignete Maßnahmen, mit denen Inventurdifferenzen künftig reduziert werden können. Begründen Sie jeweils kurz, warum die Maßnahme helfen kann.",
+          criteria: {
+            groups: [{ label: "mögliche Maßnahmen:", items: ["Zwischeninventuren", "Mitarbeiterschulung", "verbesserte Wareneingangskontrolle", "Bestandskontrollen", "Diebstahlsicherung", "saubere Kassierprozesse"] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein."
+          }
+        },
+        {
+          id: "p4_4", kind: "open", points: 3, topic: "Renner-Penner-Analyse",
+          title: "4.4 Renner-/Penner-Analyse",
+          table: {
+            headers: ["Artikel", "Absatzentwicklung"],
+            rows: [
+              ["Wanderrucksack", "+18 %"],
+              ["Fitnessband", "+2 %"],
+              ["Trekkingstock", "–21 %"],
+              ["Campinglampe", "–17 %"],
+              ["Trinkflasche Pro", "+26 %"]
+            ]
+          },
+          prompt: "a) Welche zwei Artikel sollten besonders auf eine mögliche Sortimentsbereinigung untersucht werden? b) Welcher Artikel ist in dieser Übersicht der stärkste Renner?",
+          criteria: {
+            groups: [{ label: "Lösung:", items: ["a) Trekkingstock und Campinglampe (stark rückläufiger Absatz)", "b) Trinkflasche Pro (stärkstes Absatzwachstum, +26 %)"] }],
+            note: "Begründen Sie Ihre Auswahl mit den Prozentwerten aus der Tabelle."
+          }
+        },
+        {
+          id: "p4_5", kind: "shortText", points: 1, topic: "Vollmachten",
+          title: "4.5 Warenwirtschaft und Vollmacht",
+          prompt: "Herr Yilmaz arbeitet im Einkauf. Er darf regelmäßig Sport- und Outdoorartikel bis zu einem festgelegten Bestellwert bei verschiedenen Lieferanten bestellen. Welche Art von Vollmacht ist hierfür grundsätzlich passend?",
+          accepted: ["Arthandlungsvollmacht", "Artvollmacht", "Art-Vollmacht", "Arthandlungsvollmacht/Artvollmacht"],
+          hint: "Prüfen Sie, ob es sich um eine wiederkehrende Art von Geschäften in einem bestimmten Warenbereich handelt.",
+          confidence: true
+        },
+        {
+          id: "p4_5b", kind: "open", points: 3, topic: "Vollmachten",
+          title: "Begründung zur Vollmacht",
+          prompt: "Erläutern Sie kurz, warum diese Vollmacht zur beschriebenen Tätigkeit passt.",
+          criteria: {
+            groups: [{ label: "Erwartung:", items: ["Sie berechtigt zur wiederkehrenden Durchführung einer bestimmten Art von Geschäften.", "Hier: Bestellungen eines bestimmten Warenbereichs (Sport- und Outdoorartikel) bis zu einem festgelegten Bestellwert."] }],
+            note: "Andere fachlich sinnvolle Formulierungen sind ebenfalls richtig."
+          }
+        }
+      ]
+    },
+
+    /* ================= AUFGABE 5 – KALKULATION, PREIS UND ERFOLG ================= */
+    {
+      id: "a5", area: "kalkulation", areaName: "Kalkulation, Preis und Erfolg",
+      title: "Aufgabe 5 · Kalkulation, Preis und Erfolg", maxPoints: 17,
+      situation: "Die MainRetail GmbH verkauft einen Outdoor-Kocher. Bezugspreis: 62,00 € · Bruttoverkaufspreis: 119,00 € · Umsatzsteuer: 19 %.",
+      parts: [
+        {
+          id: "p5_1", kind: "numberGroup", points: 9, topic: "Handelsspanne",
+          title: "5.1–5.3 Nettoverkaufspreis, Rohgewinn und Handelsspanne",
+          prompt: "Berechnen Sie den Nettoverkaufspreis, den Rohgewinn je Stück und die Handelsspanne in Prozent.",
+          fields: [
+            { id: "nvp", label: "Nettoverkaufspreis", unit: "€", expected: 100.00, tol: TOL_EURO, points: 3,
+              hint: "Prüfen Sie, ob Sie beim Bruttoverkaufspreis zuerst die Umsatzsteuer herausrechnen müssen (÷ 1,19)." },
+            { id: "rohgewinn", label: "Rohgewinn je Stück", unit: "€", expected: 38.00, tol: TOL_EURO, points: 3,
+              dependsOn: "nvp", dependAdd: -62.00, hint: "Rohgewinn = Nettoverkaufspreis − Bezugspreis." },
+            { id: "handelsspanne", label: "Handelsspanne", unit: "%", expected: 38.00, tol: TOL_PROZENT, points: 3,
+              dependsOn: "rohgewinn", dependFormula: "percentOfField", dependBaseField: "nvp", dependFallback: 100.00,
+              hint: "Prüfen Sie, ob sich die Handelsspanne auf den Netto- oder Bruttoverkaufspreis bezieht. Formel: (Rohgewinn ÷ Nettoverkaufspreis) × 100." }
+          ],
+          confidence: true
+        },
+        {
+          id: "p5_4", kind: "numberGroup", points: 4, topic: "Handelsspanne",
+          title: "5.4 Veränderter Bezugspreis",
+          prompt: "Der Lieferant erhöht den Bezugspreis auf 67,00 €. Der Nettoverkaufspreis bleibt zunächst unverändert (100,00 €). Berechnen Sie a) den neuen Rohgewinn und b) die neue Handelsspanne.",
+          fieldPointsEach: 2,
+          fields: [
+            { id: "neuerRohgewinn", label: "neuer Rohgewinn", unit: "€", expected: 33.00, tol: TOL_EURO,
+              hint: "Neuer Rohgewinn = Nettoverkaufspreis (100,00 €) − neuer Bezugspreis (67,00 €)." },
+            { id: "neueHandelsspanne", label: "neue Handelsspanne", unit: "%", expected: 33.00, tol: TOL_PROZENT,
+              dependsOn: "neuerRohgewinn", dependFormula: "percentOfConstant", dependConstant: 100.00,
+              hint: "Neue Handelsspanne = (neuer Rohgewinn ÷ Nettoverkaufspreis) × 100; der Nettoverkaufspreis bleibt bei 100,00 €." }
+          ],
+          confidence: true
+        },
+        {
+          id: "p5_5", kind: "open", points: 4, topic: "Preisentscheidung",
+          title: "5.5 Unternehmerische Entscheidung",
+          prompt: "Die Geschäftsführung überlegt, wie sie auf den gestiegenen Bezugspreis reagieren soll. Nennen Sie zwei mögliche Maßnahmen und erläutern Sie jeweils einen Vor- oder Nachteil.",
+          criteria: {
+            groups: [{ label: "mögliche Maßnahmen mit Vor-/Nachteil:", items: [
+              "Verkaufspreis erhöhen – Vorteil: Marge steigt; Nachteil: Absatz könnte sinken.",
+              "Lieferanten wechseln – Vorteil: möglicher günstigerer Bezugspreis; Nachteil: Qualitäts-/Lieferrisiko.",
+              "Einkaufskonditionen neu verhandeln – Vorteil: Marge verbessert sich ohne Preissteigerung.",
+              "Gewinnspanne reduzieren – Vorteil: Verkaufspreis bleibt wettbewerbsfähig; Nachteil: geringerer Gewinn.",
+              "Mischkalkulation – Vorteil: Preis kann gehalten werden; Nachteil: andere Artikel müssen höhere Beiträge leisten."
+            ] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein."
+          }
+        }
+      ]
+    },
+
+    /* ================= AUFGABE 6 – KOMPLEXER GESCHÄFTSPROZESS ================= */
+    {
+      id: "a6", area: "transfer", areaName: "Komplexer Geschäftsprozess",
+      title: "Aufgabe 6 · Komplexer Geschäftsprozess", maxPoints: 15,
+      situation: "Am Ende des Quartals erhält die Geschäftsführung folgende Auswertung: Die durchschnittliche Lagerdauer ist von 38 auf 52 Tage gestiegen. Die Kapitalbindung im Lager ist gestiegen. Trekkingstöcke und Campinglampen verkaufen sich deutlich schlechter. Bei Trinkflaschen und Wanderrucksäcken kommt es regelmäßig zu Fehlbeständen. Die Inventurdifferenzen haben gegenüber dem Vorjahr zugenommen. Ein wichtiger Lieferant hat seine Lieferzeit von 5 auf 11 Tage erhöht. Der Bezugspreis mehrerer stark nachgefragter Artikel ist um 7 % gestiegen.",
+      parts: [
+        {
+          id: "p6_1", kind: "open", points: 4, topic: "Komplexer Transferfall",
+          title: "6.1 Probleme erkennen",
+          prompt: "Nennen Sie vier betriebswirtschaftlich relevante Probleme, die Sie aus der Situation erkennen.",
+          criteria: {
+            groups: [{ label: "mögliche Probleme:", items: ["steigende Lagerdauer", "steigende Kapitalbindung", "Penner (Trekkingstock, Campinglampe)", "Fehlbestände bei Rennern (Trinkflaschen, Wanderrucksäcke)", "steigende Inventurdifferenzen", "längere Lieferzeiten", "steigende Bezugspreise", "sinkende Wirtschaftlichkeit"] }],
+            note: "Andere fachlich sinnvolle Antworten können ebenfalls richtig sein."
+          }
+        },
+        {
+          id: "p6_2", kind: "open", points: 4, topic: "Komplexer Transferfall",
+          title: "6.2 Zusammenhänge erklären",
+          prompt: "Erläutern Sie zwei Zusammenhänge zwischen den dargestellten Problemen. Beispiel für die Art der Antwort: „Eine längere Lieferzeit kann dazu führen, dass der bisherige Meldebestand nicht mehr ausreicht und häufiger Fehlbestände entstehen.“ Formulieren Sie zwei eigene Zusammenhänge.",
+          criteria: {
+            groups: [{ label: "mögliche Zusammenhänge:", items: [
+              "längere Lieferzeit → bisheriger Meldebestand reicht eventuell nicht → Fehlbestände",
+              "sinkender Absatz → Ware bleibt länger liegen → Lagerdauer steigt",
+              "höhere Bestände → höhere Kapitalbindung → geringere Liquidität",
+              "steigende Bezugspreise → Rohgewinn/Handelsspanne sinken",
+              "fehlerhafte Bestände → falsche Bestellungen → Fehl- oder Überbestände",
+              "Fehlbestände bei Rennern → entgangene Umsätze"
+            ] }],
+            note: "Je Zusammenhang zählt sowohl die fachliche Richtigkeit als auch die nachvollziehbare Erläuterung."
+          }
+        },
+        {
+          id: "p6_3", kind: "open", points: 6, topic: "Komplexer Transferfall",
+          title: "6.3 Maßnahmen entwickeln",
+          prompt: "Entwickeln Sie drei konkrete Maßnahmen, mit denen die MainRetail GmbH die Situation verbessern kann. Begründen Sie jede Maßnahme.",
+          criteria: {
+            groups: [{ label: "mögliche Maßnahmen:", items: ["Meldebestand an neue Lieferzeit anpassen", "Pennerbestände abbauen", "Bestellmengen reduzieren", "Renner häufiger nachbestellen", "alternative Lieferanten suchen", "Zwischeninventuren durchführen", "WWS-Daten konsequenter auswerten", "Lieferantenverhandlungen führen", "Sortiment bereinigen", "Mindestbestände differenziert überprüfen"] }],
+            note: "Je Maßnahme zählt auch die Begründung."
+          }
+        },
+        {
+          id: "p6_4", kind: "open", points: 1, topic: "Komplexer Transferfall",
+          title: "6.4 Priorität setzen",
+          prompt: "Welche Ihrer vorgeschlagenen Maßnahmen sollte das Unternehmen zuerst umsetzen? Begründen Sie Ihre Entscheidung kurz.",
+          criteria: {
+            groups: [{ label: "Hinweis:", items: ["Mehrere Lösungen sind zulässig. Entscheidend ist eine nachvollziehbare Priorisierung."] }],
+            note: "Andere fachlich sinnvolle Priorisierungen sind ebenfalls richtig."
+          }
+        }
+      ]
+    }
+  ],
+
+  // Texte für die Bandbreiten-Bewertung je Bereich/Unterthema (Kapitel 7)
+  bandText: {
+    green: "Sicher",
+    yellow: "Noch festigen",
+    red: "Übungsschwerpunkt"
+  },
+
+  // Kurze Lernhinweise je Unterthema für den persönlichen Lernplan.
+  // Eine Lehrkraft kann hier Texte anpassen oder ergänzen.
+  lernhinweise: {
+    "Meldebestand": "Wiederholen Sie die Formel Meldebestand = (Ø Tagesabsatz × Lieferzeit) + Mindestbestand und wann eine Bestellung ausgelöst werden sollte.",
+    "Mindestbestand": "Wiederholen Sie die Funktionen des Mindestbestandes (Sicherheitsbestand, Lieferverzögerungen, Nachfrageschwankungen).",
+    "Beschaffungsdaten": "Wiederholen Sie, welche WWS-Daten für Bestellentscheidungen hilfreich sind.",
+    "Warenannahme": "Wiederholen Sie die Kontrollen bei der Warenannahme und wie Abweichungen erkannt werden.",
+    "Vertragsstörungen": "Wiederholen Sie das Vorgehen bei mangelhaften oder unvollständigen Lieferungen (Mängelrüge, Nachlieferung, Ersatzlieferung).",
+    "Datenqualität WWS": "Wiederholen Sie, welche Folgen fehlerhafte Bestandsdaten im Warenwirtschaftssystem haben können.",
+    "Lagerbestand": "Üben Sie die Berechnung des durchschnittlichen Lagerbestandes aus mehreren Stichtagswerten.",
+    "Lagerumschlag": "Üben Sie die Berechnung der Umschlagshäufigkeit (Wareneinsatz ÷ durchschnittlicher Lagerbestand).",
+    "Lagerdauer": "Wiederholen Sie den Zusammenhang zwischen Umschlagshäufigkeit und Lagerdauer.",
+    "Lagerzinsen": "Üben Sie die Berechnung der Lagerzinsen (durchschnittlicher Lagerbestand × Zinssatz × Lagerdauer ÷ 360).",
+    "Lagerkennzahlen beurteilen": "Üben Sie, aus der Entwicklung von Lagerkennzahlen mögliche negative Folgen abzuleiten.",
+    "Lageroptimierung": "Wiederholen Sie mögliche Maßnahmen zur Reduzierung von Lagerbeständen und deren Begründung.",
+    "Inventurdifferenz": "Üben Sie die Berechnung von Inventurdifferenzen (mengen- und wertmäßig) sowie mögliche Ursachen und Gegenmaßnahmen.",
+    "Renner-Penner-Analyse": "Wiederholen Sie, wie Absatzentwicklungen zur Identifikation von Rennern und Pennern genutzt werden.",
+    "Vollmachten": "Wiederholen Sie die Unterschiede zwischen Einzel-, Art- und Handlungsvollmacht sowie Prokura.",
+    "Handelsspanne": "Wiederholen Sie Netto/Brutto-Umrechnung, Rohgewinn und Handelsspanne auf Basis des Nettoverkaufspreises.",
+    "Preisentscheidung": "Wiederholen Sie mögliche unternehmerische Reaktionen auf gestiegene Bezugspreise mit ihren Vor- und Nachteilen.",
+    "Komplexer Transferfall": "Üben Sie, mehrere betriebliche Kennzahlen und Beobachtungen zusammenzuführen, Zusammenhänge zu erkennen und begründete Maßnahmen zu priorisieren."
+  }
+};
+
+/* =====================================================================
+   3) ENGINE – ab hier normalerweise keine inhaltlichen Änderungen nötig
+   ===================================================================== */
+
+// ---------- Zustand ----------
+let state = loadState() || createFreshState();
+
+function createFreshState(){
+  const parts = {};
+  CONFIG.tasks.forEach(t => t.parts.forEach(p => {
+    parts[p.id] = {
+      textValue: "",           // offene Antworten
+      fieldValues: {},         // numberGroup: {fieldId: rawInputString}
+      selectValue: "",         // selectOpen / decisionOpen
+      multiSelect: {},         // multiSelectOpen: {optionLabel: boolean}
+      matchValues: {},         // matchGroup: {itemId: gewählte Option}
+      shortTextValue: "",      // shortText
+      revealed: false,         // Lösungshinweise sichtbar?
+      checked: false,          // "Antwort prüfen" wurde geklickt
+      selfAssessment: null,    // "full" | "partial" | "none"
+      confidence: null,        // "sicher" | "eher" | "geraten" (LIVE, kann sich noch ändern)
+      earnedPoints: 0,         // LIVE-Punkte: reagieren auf jede weitere Bearbeitung (nur für Feedback)
+      correctness: null,       // LIVE-Ergebnis: true/false/"mid"/Zahl 0–1 (nur für Feedback)
+      // --- Diagnose-Sperre (nur der erste Versuch zählt für die Auswertung) ---
+      diagLocked: false,       // wurde der erste Versuch bereits eingefroren?
+      diagEarned: null,        // eingefrorene Punkte für die Diagnose
+      diagCorrectness: null,   // eingefrorenes Ergebnis für die Fehlvorstellungs-Erkennung
+      diagConfidence: null,    // eingefrorene Sicherheitseinschätzung
+      diagSelectLocked: false, // nur für selectOpen/multiSelectOpen: Auswahl-Anteil separat eingefroren
+      diagSelectFraction: null // nur für selectOpen/multiSelectOpen: eingefrorener Auswahl-Anteil (0/0,5/1)
+    };
+  }));
+  return {
+    started: false,
+    finished: false,
+    currentTask: 0,
+    remainingSeconds: TOTAL_SECONDS,
+    timerRunning: false,
+    parts: parts
+  };
+}
+
+// Rückblick-Modus (Backlink): rein clientseitiger Navigationszustand, wird
+// bewusst NICHT in localStorage gespeichert (bei Reload landet man wieder
+// auf der Auswertungsseite – unkritisch, da alle Antworten erhalten bleiben).
+let reviewTaskIndex = null;      // Aufgaben-Index, wenn man aus der Auswertung zurückspringt
+let reviewHighlightParts = [];   // welche Teilaufgaben dabei hervorgehoben werden
+
+// Schreibt den aktuellen LIVE-Stand einmalig als Diagnosewert fest (erster Versuch).
+// Wird von allen Bewertungsfunktionen aufgerufen; wirkt nur beim ersten Aufruf.
+function lockDiagnosis(st){
+  if(!st.diagLocked){
+    st.diagEarned = st.earnedPoints;
+    st.diagCorrectness = st.correctness;
+    // Für numberGroup-Aufgaben mit feldbezogenen Unterthemen (z. B. Lagerumschlag/
+    // Lagerdauer) auch die Einzelfeld-Ergebnisse des ersten Versuchs einfrieren,
+    // damit die Detaildiagnose je Unterthema ebenfalls nur den ersten Versuch zeigt.
+    if(st._fieldResults){
+      st._diagFieldResults = JSON.parse(JSON.stringify(st._fieldResults));
+    }
+    st.diagLocked = true;
+  }
+}
+function lockConfidence(st){
+  if(st.diagConfidence === null && st.confidence !== null){
+    st.diagConfidence = st.confidence;
+  }
+}
+function getActiveTaskIndex(){
+  return state.finished ? reviewTaskIndex : state.currentTask;
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Grunddefensive Prüfung: passt der gespeicherte Zustand zu dieser Aufgabenkonfiguration?
+    const allPartIds = [];
+    CONFIG.tasks.forEach(t => t.parts.forEach(p => allPartIds.push(p.id)));
+    const ok = allPartIds.every(id => parsed.parts && Object.prototype.hasOwnProperty.call(parsed.parts, id));
+    if(!ok) return null;
+    return parsed;
+  }catch(e){
+    return null;
+  }
+}
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){
+    // Speicher evtl. voll oder deaktiviert – Anwendung funktioniert trotzdem weiter.
+    console.warn("Konnte Fortschritt nicht speichern:", e);
+  }
+}
+
+// ---------- Zahlen-Normalisierung (Kapitel 9) ----------
+function parseNum(raw){
+  if(raw === null || raw === undefined) return NaN;
+  let s = String(raw).trim();
+  if(s === "") return NaN;
+  s = s.replace(/[€%]/g, "").replace(/\s+/g, "");
+  const hasComma = s.includes(",");
+  const hasDot = s.includes(".");
+  if(hasComma && hasDot){
+    // Deutsches Format mit Tausenderpunkt, z. B. 1.234,56
+    s = s.replace(/\./g, "").replace(",", ".");
+  } else if(hasComma){
+    // Komma als Dezimaltrennzeichen, z. B. 12,50
+    s = s.replace(",", ".");
+  } else if(hasDot){
+    // Ein Punkt ohne Komma: bei genau drei Nachkommastellen als Tausenderpunkt interpretieren
+    // (z. B. 12.500 -> 12500), sonst als Dezimalpunkt belassen (z. B. 12.50 -> 12.50).
+    const idx = s.lastIndexOf(".");
+    const decimals = s.length - idx - 1;
+    if(decimals === 3){
+      s = s.replace(/\./g, "");
+    }
+  }
+  const val = parseFloat(s);
+  return val;
+}
+
+function fmtEuro(n){ return n.toLocaleString("de-DE", {minimumFractionDigits:2, maximumFractionDigits:2}) + " €"; }
+function fmtPercent(n){ return n.toLocaleString("de-DE", {minimumFractionDigits:2, maximumFractionDigits:2}) + " %"; }
+function fmtPlain(n){ return n.toLocaleString("de-DE", {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtByUnit(n, unit){
+  if(unit === "€") return fmtEuro(n);
+  if(unit === "%") return fmtPercent(n);
+  if(unit === "Tage") return fmtPlain(n) + " Tage";
+  return fmtPlain(n);
+}
+
+// ---------- Levenshtein-Distanz für fehlertolerante Kurzantworten ----------
+function levenshtein(a, b){
+  a = a.toLowerCase(); b = b.toLowerCase();
+  const m = a.length, n = b.length;
+  const d = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) d[i][0] = i;
+  for(let j=0;j<=n;j++) d[0][j] = j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      const cost = a[i-1] === b[j-1] ? 0 : 1;
+      d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+cost);
+    }
+  }
+  return d[m][n];
+}
+function normalizeTerm(s){
+  return s.toLowerCase().replace(/-/g, "").replace(/\s+/g, "");
+}
+function fuzzyMatch(input, target){
+  const a = normalizeTerm(input);
+  const b = normalizeTerm(target);
+  if(a === b) return true;
+  const dist = levenshtein(a, b);
+  const allowed = Math.max(1, Math.floor(b.length * 0.2)); // ca. 20% Toleranz für Tippfehler
+  return dist <= allowed;
+}
+
+/* =====================================================================
+   4) RENDER-FUNKTIONEN
+   ===================================================================== */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+function render(){
+  const autosave = $("#autosaveNote");
+  if(!state.started){
+    show("screenStart"); hide("screenTasks"); hide("screenResults");
+    autosave.style.display = "none";
+  } else if(state.finished && reviewTaskIndex === null){
+    hide("screenStart"); hide("screenTasks"); show("screenResults");
+    renderResults();
+    autosave.style.display = "none";
+  } else if(state.finished && reviewTaskIndex !== null){
+    hide("screenStart"); show("screenTasks"); hide("screenResults");
+    renderTask(reviewTaskIndex);
+    autosave.style.display = "none";
+  } else {
+    hide("screenStart"); show("screenTasks"); hide("screenResults");
+    renderTask(state.currentTask);
+    autosave.style.display = "block";
+  }
+  renderTimer();
+}
+function show(id){ document.getElementById(id).style.display = ""; }
+function hide(id){ document.getElementById(id).style.display = "none"; }
+
+function renderTask(idx){
+  const task = CONFIG.tasks[idx];
+  const reviewing = state.finished;
+  $("#taskCounter").textContent = `Aufgabe ${idx+1} von ${CONFIG.tasks.length}`;
+  $("#taskAreaLabel").textContent = task.areaName;
+  const track = $("#progressTrack");
+  track.innerHTML = "";
+  CONFIG.tasks.forEach((t, i) => {
+    const seg = document.createElement("div");
+    seg.className = "progress-seg" + (i < idx ? " done" : (i === idx ? " current" : ""));
+    track.appendChild(seg);
+  });
+
+  const el = document.createElement("div");
+  el.className = "card";
+
+  if(reviewing){
+    const rb = document.createElement("div");
+    rb.className = "review-banner";
+    rb.textContent = "Rückblick-Modus: Ihr Trainer ist bereits abgeschlossen und bewertet. Sie können hier weiterüben – das verändert Ihre Auswertung nicht mehr.";
+    el.appendChild(rb);
+  }
+
+  const header = document.createElement("div");
+  header.className = "task-header";
+  header.innerHTML = `<h2>${task.title}</h2><span class="badge-bereich ${task.isAnschluss ? "badge-anschluss":""}">${task.areaName}</span>`;
+  el.appendChild(header);
+
+  if(task.isAnschluss){
+    const banner = document.createElement("div");
+    banner.className = "anschluss-banner";
+    banner.textContent = "Zusatzbereich – wird gesondert ausgewiesen und verändert nicht die Bewertung der übrigen Bereiche.";
+    el.appendChild(banner);
+  }
+
+  if(task.situation){
+    const sit = document.createElement("div");
+    sit.className = "situation-box";
+    sit.textContent = task.situation;
+    el.appendChild(sit);
+  }
+
+  task.parts.forEach(part => {
+    el.appendChild(renderPart(part));
+  });
+
+  const container = $("#taskContainer");
+  container.innerHTML = "";
+  container.appendChild(el);
+
+  $("#btnBack").disabled = idx === 0;
+  if(reviewing){
+    $("#btnNext").textContent = "Nächste Aufgabe →";
+    $("#btnNext").disabled = idx === CONFIG.tasks.length - 1;
+  } else {
+    $("#btnNext").disabled = false;
+    $("#btnNext").textContent = (idx === CONFIG.tasks.length - 1) ? "Zur Auswertung →" : "Weiter →";
+  }
+  $("#finishEarlyRow").style.display = reviewing ? "none" : "";
+  $("#backToResultsRow").style.display = reviewing ? "" : "none";
+
+  if(reviewing && reviewHighlightParts.length){
+    reviewHighlightParts.forEach(pid => {
+      const target = document.getElementById("part-" + pid);
+      if(target) target.classList.add("review-highlight");
+    });
+    const firstTarget = document.getElementById("part-" + reviewHighlightParts[0]);
+    if(firstTarget){
+      setTimeout(() => firstTarget.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    }
+  }
+}
+
+function renderPart(part){
+  const st = state.parts[part.id];
+  const wrap = document.createElement("div");
+  wrap.className = "part";
+  wrap.id = "part-" + part.id;
+  wrap.innerHTML = `<h3>${part.title} <span class="points-tag">(${part.points} ${part.points === 1 ? "Punkt" : "Punkte"})</span></h3>`;
+
+  if(part.kind === "open"){
+    wrap.appendChild(renderOpenPart(part, st));
+  } else if(part.kind === "numberGroup"){
+    wrap.appendChild(renderNumberGroupPart(part, st));
+  } else if(part.kind === "selectOpen"){
+    wrap.appendChild(renderSelectOpenPart(part, st));
+  } else if(part.kind === "multiSelectOpen"){
+    wrap.appendChild(renderMultiSelectOpenPart(part, st));
+  } else if(part.kind === "decisionOpen"){
+    wrap.appendChild(renderDecisionOpenPart(part, st));
+  } else if(part.kind === "keywordText"){
+    wrap.appendChild(renderKeywordTextPart(part, st));
+  } else if(part.kind === "matchGroup"){
+    wrap.appendChild(renderMatchGroupPart(part, st));
+  } else if(part.kind === "shortText"){
+    wrap.appendChild(renderShortTextPart(part, st));
+  }
+  return wrap;
+}
+
+/* ---------- Offene Aufgabe mit Selbstbewertung ---------- */
+function renderOpenPart(part, st){
+  const box = document.createElement("div");
+  const p = document.createElement("p"); p.className = "prompt"; p.textContent = part.prompt;
+  box.appendChild(p);
+
+  const ta = document.createElement("textarea");
+  ta.placeholder = "Ihre Antwort …";
+  ta.value = st.textValue || "";
+  ta.addEventListener("input", () => {
+    st.textValue = ta.value;
+    revealBtn.disabled = ta.value.trim().length === 0;
+    saveState();
+  });
+  box.appendChild(ta);
+
+  const btnRow = document.createElement("div");
+  btnRow.className = "btn-row";
+  const revealBtn = document.createElement("button");
+  revealBtn.className = "btn secondary";
+  revealBtn.textContent = "Mit Lösungshinweisen vergleichen";
+  revealBtn.disabled = !(st.textValue && st.textValue.trim().length > 0);
+  revealBtn.addEventListener("click", () => {
+    st.revealed = true; saveState(); renderTask(getActiveTaskIndex());
+  });
+  btnRow.appendChild(revealBtn);
+  box.appendChild(btnRow);
+
+  if(st.revealed){
+    box.appendChild(renderCriteriaBox(part.criteria));
+    box.appendChild(renderSelfAssessment(part, st));
+  }
+  return box;
+}
+
+function renderCriteriaBox(criteria){
+  const box = document.createElement("div");
+  box.className = "criteria-box";
+  criteria.groups.forEach(g => {
+    const lbl = document.createElement("div");
+    lbl.style.fontWeight = "700"; lbl.textContent = g.label;
+    box.appendChild(lbl);
+    const ul = document.createElement("ul");
+    g.items.forEach(it => { const li = document.createElement("li"); li.textContent = it; ul.appendChild(li); });
+    box.appendChild(ul);
+  });
+  if(criteria.note){
+    const note = document.createElement("div");
+    note.className = "criteria-note";
+    note.textContent = criteria.note;
+    box.appendChild(note);
+  }
+  return box;
+}
+
+function renderSelfAssessment(part, st){
+  const box = document.createElement("div");
+
+  if(st.diagLocked){
+    box.appendChild(renderDiagBanner(st, part.points));
+  }
+
+  box.className += (box.className ? " " : "") + "self-assess";
+  const heading = document.createElement("div");
+  heading.style.fontWeight = "600";
+  heading.textContent = "Wie schätzen Sie Ihre eigene Antwort ein?";
+  box.appendChild(heading);
+  const opts = document.createElement("div");
+  opts.className = "options";
+  const choices = [
+    { key: "full", label: "vollständig berücksichtigt" },
+    { key: "partial", label: "teilweise berücksichtigt" },
+    { key: "none", label: "noch nicht ausreichend" }
+  ];
+  choices.forEach(c => {
+    const lbl = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "radio"; input.name = "self_" + part.id; input.value = c.key;
+    if(st.selfAssessment === c.key) input.checked = true;
+    if(st.diagLocked) input.disabled = true;
+    input.addEventListener("change", () => {
+      st.selfAssessment = c.key;
+      const factor = c.key === "full" ? 1 : (c.key === "partial" ? 0.5 : 0);
+      st.earnedPoints = round2(part.points * factor);
+      lockDiagnosis(st);
+      saveState();
+      renderTask(getActiveTaskIndex());
+    });
+    lbl.appendChild(input);
+    lbl.appendChild(document.createTextNode(c.label));
+    opts.appendChild(lbl);
+  });
+  box.appendChild(opts);
+  return box;
+}
+
+// Kleiner, neutraler Hinweis-Banner: zeigt das eingefrorene Diagnoseergebnis,
+// sobald der erste Versuch einer Teilaufgabe gewertet wurde.
+function renderDiagBanner(st, maxPoints){
+  const b = document.createElement("div");
+  b.className = "diag-banner";
+  b.textContent = `Für Ihre Diagnose zählt Ihr erster Versuch: ${round2(st.diagEarned || 0)} von ${maxPoints} Punkten. Sie können hier weiterüben – das verändert Ihre Auswertung nicht mehr.`;
+  return b;
+}
+
+/* ---------- Zahlen-/Rechenaufgaben (Tabellen) ---------- */
+function renderNumberGroupPart(part, st){
+  const box = document.createElement("div");
+  if(part.prompt){ const p = document.createElement("p"); p.className = "prompt"; p.textContent = part.prompt; box.appendChild(p); }
+
+  if(part.tableIntro){
+    const scroll = document.createElement("div"); scroll.className = "table-scroll";
+    const table = document.createElement("table"); table.className = "data-table";
+    const maxRows = Math.max(...part.tableIntro.map(g => g.rows.length));
+    let thead = "<tr>" + part.tableIntro.map(g => `<th>${g.label}</th>`).join("") + "</tr>";
+    let tbody = "";
+    for(let r=0; r<maxRows; r++){
+      tbody += "<tr>" + part.tableIntro.map(g => `<td>${g.rows[r] || ""}</td>`).join("") + "</tr>";
+    }
+    table.innerHTML = "<thead>"+thead+"</thead><tbody>"+tbody+"</tbody>";
+    scroll.appendChild(table);
+    box.appendChild(scroll);
+  }
+
+  if(part.table){
+    box.appendChild(renderStaticDataTable(part.table));
+  }
+
+  const scroll2 = document.createElement("div"); scroll2.className = "table-scroll";
+  const calcTable = document.createElement("table"); calcTable.className = "calc-table";
+  let rows = "";
+  part.fields.forEach(f => {
+    rows += `<tr>
+      <td>${f.label}</td>
+      <td><div class="input-wrap">
+        <input type="text" inputmode="decimal" data-field="${f.id}" value="${escapeHtml(st.fieldValues[f.id] || "")}" placeholder="0,00">
+        <span class="unit">${f.unit || ""}</span>
+      </div></td>
+    </tr>`;
+  });
+  calcTable.innerHTML = `<tbody>${rows}</tbody>`;
+  scroll2.appendChild(calcTable);
+  box.appendChild(scroll2);
+
+  // Eingaben persistieren
+  scroll2.querySelectorAll("input[data-field]").forEach(inp => {
+    inp.addEventListener("input", () => {
+      st.fieldValues[inp.dataset.field] = inp.value;
+      saveState();
+    });
+  });
+
+  const btnRow = document.createElement("div");
+  btnRow.className = "btn-row";
+  const checkBtn = document.createElement("button");
+  checkBtn.className = "btn";
+  checkBtn.textContent = st.diagLocked ? "Antwort erneut prüfen (zum Üben)" : "Antwort prüfen";
+  checkBtn.addEventListener("click", () => {
+    gradeNumberGroup(part, st);
+    st.checked = true;
+    lockDiagnosis(st);
+    saveState();
+    renderTask(getActiveTaskIndex());
+  });
+  btnRow.appendChild(checkBtn);
+  box.appendChild(btnRow);
+
+  if(st.checked){
+    if(st.diagLocked){ box.appendChild(renderDiagBanner(st, part.points)); }
+    box.appendChild(renderNumberGroupFeedback(part, st));
+    if(part.confidence){ box.appendChild(renderConfidence(part, st)); }
+  }
+
+  return box;
+}
+
+function renderStaticDataTable(tableDef){
+  const scroll = document.createElement("div"); scroll.className = "table-scroll";
+  const table = document.createElement("table"); table.className = "data-table";
+  let thead = "<tr>" + tableDef.headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+  let tbody = "";
+  tableDef.rows.forEach(r => { tbody += "<tr>" + r.map(c => `<td>${c}</td>`).join("") + "</tr>"; });
+  table.innerHTML = "<thead>"+thead+"</thead><tbody>"+tbody+"</tbody>";
+  scroll.appendChild(table);
+  return scroll;
+}
+
+function renderNumberGroupFeedback(part, st){
+  const box = document.createElement("div");
+  part.fields.forEach(f => {
+    const res = st._fieldResults ? st._fieldResults[f.id] : null;
+    if(!res) return;
+    const fb = document.createElement("div");
+    fb.className = "feedback " + (res.status === "correct" ? "correct" : (res.status === "partial" ? "partial" : "wrong"));
+    let msg;
+    if(res.status === "correct"){
+      msg = `${f.label}: richtig (${fmtByUnit(f.expected, f.unit)}).`;
+    } else if(res.status === "partial"){
+      msg = `${f.label}: teilweise richtig – Ihr Ergebnis passt zum vorherigen Zwischenschritt, weicht aber vom Endergebnis ${fmtByUnit(f.expected, f.unit)} ab.`;
+    } else {
+      msg = `${f.label}: ${f.hint || "Prüfen Sie Ihre Rechnung noch einmal."}`;
+    }
+    fb.textContent = msg;
+    box.appendChild(fb);
+  });
+  return box;
+}
+
+function renderConfidence(part, st){
+  const box = document.createElement("div");
+  box.className = "confidence";
+  box.innerHTML = `<div style="font-weight:600;">Wie sicher waren Sie bei dieser Aufgabe?</div>`;
+  const opts = document.createElement("div");
+  opts.className = "options";
+  const choices = [
+    { key: "sicher", label: "sicher" },
+    { key: "eher", label: "eher sicher" },
+    { key: "geraten", label: "geraten / sehr unsicher" }
+  ];
+  choices.forEach(c => {
+    const lbl = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "radio"; input.name = "conf_" + part.id; input.value = c.key;
+    if(st.confidence === c.key) input.checked = true;
+    if(st.diagConfidence !== null) input.disabled = true;
+    input.addEventListener("change", () => {
+      st.confidence = c.key;
+      lockConfidence(st);
+      saveState();
+      renderTask(getActiveTaskIndex());
+    });
+    lbl.appendChild(input);
+    lbl.appendChild(document.createTextNode(c.label));
+    opts.appendChild(lbl);
+  });
+  box.appendChild(opts);
+  return box;
+}
+
+/* ---------- Auswahl + offene Begründung (2.1) ---------- */
+function renderSelectOpenPart(part, st){
+  const box = document.createElement("div");
+  if(part.table){ box.appendChild(renderStaticDataTable(part.table)); }
+
+  const p1 = document.createElement("p"); p1.className = "prompt"; p1.style.marginTop = "12px";
+  p1.textContent = part.selectPrompt; box.appendChild(p1);
+
+  const sel = document.createElement("select");
+  const emptyOpt = document.createElement("option"); emptyOpt.value = ""; emptyOpt.textContent = "Bitte wählen …";
+  sel.appendChild(emptyOpt);
+  part.selectOptions.forEach(o => {
+    const opt = document.createElement("option"); opt.value = o; opt.textContent = o;
+    if(st.selectValue === o) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener("change", () => { st.selectValue = sel.value; saveState(); });
+  box.appendChild(sel);
+
+  const p2 = document.createElement("p"); p2.className = "prompt"; p2.style.marginTop = "14px";
+  p2.textContent = part.openPrompt; box.appendChild(p2);
+
+  const ta = document.createElement("textarea");
+  ta.placeholder = "Ihre Begründung …";
+  ta.value = st.textValue || "";
+  ta.addEventListener("input", () => {
+    st.textValue = ta.value;
+    revealBtn.disabled = !(ta.value.trim().length > 0 && sel.value !== "");
+    saveState();
+  });
+  box.appendChild(ta);
+
+  const btnRow = document.createElement("div"); btnRow.className = "btn-row";
+  const revealBtn = document.createElement("button");
+  revealBtn.className = "btn secondary";
+  revealBtn.textContent = st.diagSelectLocked ? "Auswahl erneut prüfen (zum Üben)" : "Mit Lösungshinweisen vergleichen";
+  revealBtn.disabled = !(st.textValue && st.textValue.trim().length > 0 && st.selectValue);
+  revealBtn.addEventListener("click", () => {
+    st.correctness = (st.selectValue === part.correctSelect);
+    st.revealed = true;
+    if(!st.diagSelectLocked){
+      st.diagSelectFraction = st.correctness ? 1 : 0;
+      st.diagSelectLocked = true;
+    }
+    saveState();
+    renderTask(getActiveTaskIndex());
+  });
+  btnRow.appendChild(revealBtn);
+  box.appendChild(btnRow);
+
+  if(st.revealed){
+    if(st.diagLocked){ box.appendChild(renderDiagBanner(st, (part.selectPoints||0) + part.openPoints)); }
+    const selFb = document.createElement("div");
+    selFb.className = "feedback " + (st.correctness ? "correct" : "wrong");
+    selFb.textContent = st.correctness
+      ? `Richtig: ${part.correctSelect}. Erwarten Sie hierzu die Begründung unten.`
+      : `Die Lösung erwartet: ${part.correctSelect}. Prüfen Sie Bestand und Mindestbestand noch einmal im Vergleich.`;
+    box.appendChild(selFb);
+
+    box.appendChild(renderCriteriaBox(part.criteria));
+    box.appendChild(renderSelfAssessmentCustom(part, st, part.openPoints));
+  }
+  return box;
+}
+
+// Selbstbewertung mit eigenem Punktebezug (für Teilaufgaben mit gemischter Bewertung)
+function renderSelfAssessmentCustom(part, st, pointsForOpenPart){
+  const box = document.createElement("div");
+
+  if(st.diagLocked){
+    box.appendChild(renderDiagBanner(st, (part.selectPoints||0) + pointsForOpenPart));
+  }
+
+  box.className += (box.className ? " " : "") + "self-assess";
+  const heading = document.createElement("div");
+  heading.style.fontWeight = "600";
+  heading.textContent = "Wie schätzen Sie Ihre eigene Begründung ein?";
+  box.appendChild(heading);
+  const opts = document.createElement("div"); opts.className = "options";
+  const choices = [
+    { key: "full", label: "vollständig berücksichtigt" },
+    { key: "partial", label: "teilweise berücksichtigt" },
+    { key: "none", label: "noch nicht ausreichend" }
+  ];
+  choices.forEach(c => {
+    const lbl = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "radio"; input.name = "self_" + part.id; input.value = c.key;
+    if(st.selfAssessment === c.key) input.checked = true;
+    if(st.diagLocked) input.disabled = true;
+    input.addEventListener("change", () => {
+      st.selfAssessment = c.key;
+      const factor = c.key === "full" ? 1 : (c.key === "partial" ? 0.5 : 0);
+      // Für die Punkteberechnung zählt der eingefrorene erste Auswahl-Anteil,
+      // nicht eine eventuell später korrigierte Auswahl/Mehrfachauswahl.
+      const liveFraction = typeof st.correctness === "number" ? st.correctness : (st.correctness ? 1 : 0);
+      const selectFraction = st.diagSelectLocked ? st.diagSelectFraction : liveFraction;
+      const selectPts = round2((part.selectPoints || 0) * selectFraction);
+      st.earnedPoints = round2(selectPts + pointsForOpenPart * factor);
+      lockDiagnosis(st);
+      saveState();
+      renderTask(getActiveTaskIndex());
+    });
+    lbl.appendChild(input); lbl.appendChild(document.createTextNode(c.label));
+    opts.appendChild(lbl);
+  });
+  box.appendChild(opts);
+  return box;
+}
+
+/* ---------- Mehrfachauswahl (Checkboxen) + offene Begründung (2.1) ---------- */
+function renderMultiSelectOpenPart(part, st){
+  const box = document.createElement("div");
+  box.appendChild(renderStaticDataTable(part.table));
+
+  const p1 = document.createElement("p"); p1.className = "prompt"; p1.style.marginTop = "12px";
+  p1.textContent = part.selectPrompt; box.appendChild(p1);
+
+  if(!st.multiSelect) st.multiSelect = {};
+  const optWrap = document.createElement("div"); optWrap.className = "self-assess";
+  const optRow = document.createElement("div"); optRow.className = "options";
+  part.selectOptions.forEach(o => {
+    const lbl = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "checkbox"; input.value = o;
+    input.checked = !!st.multiSelect[o];
+    input.addEventListener("change", () => {
+      st.multiSelect[o] = input.checked;
+      revealBtn.disabled = !(ta.value.trim().length > 0 && Object.values(st.multiSelect).some(Boolean));
+      saveState();
+    });
+    lbl.appendChild(input); lbl.appendChild(document.createTextNode(o));
+    optRow.appendChild(lbl);
+  });
+  optWrap.appendChild(optRow);
+  box.appendChild(optWrap);
+
+  const p2 = document.createElement("p"); p2.className = "prompt"; p2.style.marginTop = "14px";
+  p2.textContent = part.openPrompt; box.appendChild(p2);
+
+  const ta = document.createElement("textarea");
+  ta.placeholder = "Ihre Begründung …";
+  ta.value = st.textValue || "";
+  ta.addEventListener("input", () => {
+    st.textValue = ta.value;
+    revealBtn.disabled = !(ta.value.trim().length > 0 && Object.values(st.multiSelect).some(Boolean));
+    saveState();
+  });
+  box.appendChild(ta);
+
+  const btnRow = document.createElement("div"); btnRow.className = "btn-row";
+  const revealBtn = document.createElement("button");
+  revealBtn.className = "btn secondary";
+  revealBtn.textContent = st.diagSelectLocked ? "Auswahl erneut prüfen (zum Üben)" : "Mit Lösungshinweisen vergleichen";
+  revealBtn.disabled = !(st.textValue && st.textValue.trim().length > 0 && Object.values(st.multiSelect).some(Boolean));
+  revealBtn.addEventListener("click", () => {
+    // Auswahl automatisch bewerten: Bruchwert 1 / 0,5 / 0 statt Boolean,
+    // damit Teilrichtigkeit (z. B. eine von zwei richtigen Auswahlen) möglich ist.
+    const chosen = Object.keys(st.multiSelect).filter(k => st.multiSelect[k]);
+    const correctSet = part.correctSelectSet;
+    const hasWrong = chosen.some(c => !correctSet.includes(c));
+    const correctChosenCount = chosen.filter(c => correctSet.includes(c)).length;
+    let fraction;
+    if(!hasWrong && correctChosenCount === correctSet.length){
+      fraction = 1;
+    } else if(!hasWrong && correctChosenCount > 0){
+      fraction = 0.5;
+    } else {
+      fraction = 0;
+    }
+    st.correctness = fraction;
+    st.revealed = true;
+    if(!st.diagSelectLocked){
+      st.diagSelectFraction = fraction;
+      st.diagSelectLocked = true;
+    }
+    saveState();
+    renderTask(getActiveTaskIndex());
+  });
+  btnRow.appendChild(revealBtn);
+  box.appendChild(btnRow);
+
+  if(st.revealed){
+    if(st.diagLocked){ box.appendChild(renderDiagBanner(st, (part.selectPoints||0) + part.openPoints)); }
+    const fb = document.createElement("div");
+    const fraction = st.correctness;
+    fb.className = "feedback " + (fraction === 1 ? "correct" : (fraction === 0.5 ? "partial" : "wrong"));
+    fb.textContent = fraction === 1
+      ? `Richtig: ${part.correctSelectSet.join(" und ")}.`
+      : `Die Lösung erwartet: ${part.correctSelectSet.join(" und ")}. Vergleichen Sie Ist-Bestand, Mindestbestand und Meldebestand noch einmal für jeden Artikel.`;
+    box.appendChild(fb);
+
+    box.appendChild(renderCriteriaBox(part.criteria));
+    box.appendChild(renderSelfAssessmentCustom(part, st, part.openPoints));
+  }
+  return box;
+}
+
+/* ---------- Entscheidung + Begründung (1.3) ---------- */
+function renderDecisionOpenPart(part, st){
+  const box = document.createElement("div");
+  if(part.table){
+    box.appendChild(renderStaticDataTable(part.table));
+  } else if(part.info){
+    const info = document.createElement("div"); info.className = "situation-box"; info.textContent = part.info;
+    box.appendChild(info);
+  }
+
+  const sel = document.createElement("select");
+  const emptyOpt = document.createElement("option"); emptyOpt.value = ""; emptyOpt.textContent = "Bitte wählen …";
+  sel.appendChild(emptyOpt);
+  part.options.forEach(o => {
+    const opt = document.createElement("option"); opt.value = o; opt.textContent = o;
+    if(st.selectValue === o) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener("change", () => { st.selectValue = sel.value; saveState(); });
+  box.appendChild(sel);
+
+  const p = document.createElement("p"); p.className = "prompt"; p.style.marginTop = "12px"; p.textContent = part.prompt;
+  box.appendChild(p);
+
+  const ta = document.createElement("textarea");
+  ta.placeholder = "Ihre Begründung mit zwei Argumenten …";
+  ta.value = st.textValue || "";
+  ta.addEventListener("input", () => {
+    st.textValue = ta.value;
+    revealBtn.disabled = !(ta.value.trim().length > 0 && sel.value !== "");
+    saveState();
+  });
+  box.appendChild(ta);
+
+  const btnRow = document.createElement("div"); btnRow.className = "btn-row";
+  const revealBtn = document.createElement("button");
+  revealBtn.className = "btn secondary";
+  revealBtn.textContent = "Mit Lösungshinweisen vergleichen";
+  revealBtn.disabled = !(st.textValue && st.textValue.trim().length > 0 && st.selectValue);
+  revealBtn.addEventListener("click", () => { st.revealed = true; saveState(); renderTask(getActiveTaskIndex()); });
+  btnRow.appendChild(revealBtn);
+  box.appendChild(btnRow);
+
+  if(st.revealed){
+    box.appendChild(renderCriteriaBox(part.criteria));
+    box.appendChild(renderSelfAssessment(part, st));
+  }
+  return box;
+}
+
+/* ---------- Fehlertolerante Kurzantwort (4.2) ---------- */
+function renderKeywordTextPart(part, st){
+  const box = document.createElement("div");
+  const p = document.createElement("p"); p.className = "prompt"; p.textContent = part.prompt;
+  box.appendChild(p);
+
+  const ta = document.createElement("textarea");
+  ta.placeholder = "Ihre Antwort in einem Satz …";
+  ta.style.minHeight = "60px";
+  ta.value = st.textValue || "";
+  ta.addEventListener("input", () => { st.textValue = ta.value; checkBtn.disabled = ta.value.trim().length === 0; saveState(); });
+  box.appendChild(ta);
+
+  const btnRow = document.createElement("div"); btnRow.className = "btn-row";
+  const checkBtn = document.createElement("button");
+  checkBtn.className = "btn"; checkBtn.textContent = st.diagLocked ? "Antwort erneut prüfen (zum Üben)" : "Antwort prüfen";
+  checkBtn.disabled = !(st.textValue && st.textValue.trim().length > 0);
+  checkBtn.addEventListener("click", () => {
+    gradeKeywordText(part, st);
+    st.checked = true;
+    lockDiagnosis(st);
+    saveState();
+    renderTask(getActiveTaskIndex());
+  });
+  btnRow.appendChild(checkBtn);
+  box.appendChild(btnRow);
+
+  if(st.checked){
+    if(st.diagLocked){ box.appendChild(renderDiagBanner(st, part.points)); }
+    const fb = document.createElement("div");
+    const status = st.correctness;
+    fb.className = "feedback " + (status === true ? "correct" : (status === "partial" ? "partial" : "wrong"));
+    if(status === true){
+      fb.textContent = "Richtig erkannt: Eine Zahllast entsteht, wenn die Umsatzsteuer größer ist als die Vorsteuer.";
+    } else if(status === "partial"){
+      fb.textContent = "Teilweise richtig. " + part.expectedHint;
+    } else {
+      fb.textContent = "Prüfen Sie noch einmal den Zusammenhang zwischen Umsatzsteuer und Vorsteuer. " + part.expectedHint;
+    }
+    box.appendChild(fb);
+    if(part.confidence){ box.appendChild(renderConfidence(part, st)); }
+  }
+  return box;
+}
+
+function gradeKeywordText(part, st){
+  const text = normalizeTerm((st.textValue || ""));
+  const hasUst = text.includes("umsatzsteuer") || text.includes("ust");
+  const hasVst = (part.requiredEither || []).some(k => text.includes(normalizeTerm(k))) || text.includes("vorsteuer");
+  const hasComparative = (part.comparativeWords || []).some(k => text.includes(normalizeTerm(k)));
+  let earned = 0, status = false;
+  if(hasUst && hasVst && hasComparative){
+    earned = part.points; status = true;
+  } else if(hasUst && hasVst){
+    earned = round2(part.points * 0.5); status = "partial";
+  } else {
+    earned = 0; status = false;
+  }
+  st.earnedPoints = earned;
+  st.correctness = status;
+}
+
+/* ---------- Zuordnungsaufgabe über Dropdowns (matchGroup) ---------- */
+function renderMatchGroupPart(part, st){
+  const box = document.createElement("div");
+  const p = document.createElement("p"); p.className = "prompt"; p.textContent = part.prompt;
+  box.appendChild(p);
+
+  part.items.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "field-row";
+    const lbl = document.createElement("label");
+    lbl.textContent = item.caseText;
+    row.appendChild(lbl);
+
+    const wrap = document.createElement("div"); wrap.className = "input-wrap";
+    const sel = document.createElement("select");
+    const emptyOpt = document.createElement("option"); emptyOpt.value = ""; emptyOpt.textContent = "Bitte wählen …";
+    sel.appendChild(emptyOpt);
+    part.options.forEach(o => {
+      const opt = document.createElement("option"); opt.value = o; opt.textContent = o;
+      if(st.matchValues[item.id] === o) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener("change", () => { st.matchValues[item.id] = sel.value; saveState(); });
+    wrap.appendChild(sel);
+    row.appendChild(wrap);
+    box.appendChild(row);
+  });
+
+  const btnRow = document.createElement("div"); btnRow.className = "btn-row";
+  const checkBtn = document.createElement("button");
+  checkBtn.className = "btn"; checkBtn.textContent = st.diagLocked ? "Antwort erneut prüfen (zum Üben)" : "Antwort prüfen";
+  checkBtn.addEventListener("click", () => {
+    gradeMatchGroup(part, st);
+    st.checked = true;
+    lockDiagnosis(st);
+    saveState();
+    renderTask(getActiveTaskIndex());
+  });
+  btnRow.appendChild(checkBtn);
+  box.appendChild(btnRow);
+
+  if(st.checked){
+    if(st.diagLocked){ box.appendChild(renderDiagBanner(st, part.points)); }
+    const results = st._matchResults || {};
+    part.items.forEach(item => {
+      const res = results[item.id];
+      if(!res) return;
+      const fb = document.createElement("div");
+      fb.className = "feedback " + (res.correct ? "correct" : "wrong");
+      fb.textContent = res.correct
+        ? `${item.caseText.split(":")[0]}: richtig (${item.correct}).`
+        : `${item.caseText.split(":")[0]}: ${part.hint || "Prüfen Sie Ihre Zuordnung noch einmal."}`;
+      box.appendChild(fb);
+    });
+    if(part.confidence){ box.appendChild(renderConfidence(part, st)); }
+  }
+  return box;
+}
+
+function gradeMatchGroup(part, st){
+  const results = {};
+  let correctCount = 0;
+  part.items.forEach(item => {
+    const chosen = st.matchValues[item.id] || "";
+    const correct = chosen === item.correct;
+    results[item.id] = { chosen, correct };
+    if(correct) correctCount += 1;
+  });
+  st._matchResults = results;
+  const fraction = correctCount / part.items.length;
+  st.earnedPoints = round2(fraction * part.points);
+  const ratio = fraction;
+  st.correctness = ratio >= 0.8 ? true : (ratio < 0.5 ? false : "mid");
+}
+
+/* ---------- Fehlertolerante Kurzantwort mit mehreren akzeptierten Begriffen (shortText) ---------- */
+function renderShortTextPart(part, st){
+  const box = document.createElement("div");
+  const p = document.createElement("p"); p.className = "prompt"; p.textContent = part.prompt;
+  box.appendChild(p);
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "Ihre Antwort …";
+  input.value = st.shortTextValue || "";
+  input.addEventListener("input", () => {
+    st.shortTextValue = input.value;
+    checkBtn.disabled = input.value.trim().length === 0;
+    saveState();
+  });
+  box.appendChild(input);
+
+  const btnRow = document.createElement("div"); btnRow.className = "btn-row";
+  const checkBtn = document.createElement("button");
+  checkBtn.className = "btn"; checkBtn.textContent = st.diagLocked ? "Antwort erneut prüfen (zum Üben)" : "Antwort prüfen";
+  checkBtn.disabled = !(st.shortTextValue && st.shortTextValue.trim().length > 0);
+  checkBtn.addEventListener("click", () => {
+    gradeShortText(part, st);
+    st.checked = true;
+    lockDiagnosis(st);
+    saveState();
+    renderTask(getActiveTaskIndex());
+  });
+  btnRow.appendChild(checkBtn);
+  box.appendChild(btnRow);
+
+  if(st.checked){
+    if(st.diagLocked){ box.appendChild(renderDiagBanner(st, part.points)); }
+    const fb = document.createElement("div");
+    fb.className = "feedback " + (st.correctness ? "correct" : "wrong");
+    fb.textContent = st.correctness
+      ? `Richtig: ${part.accepted[0]}.`
+      : (part.hint || "Prüfen Sie Ihre Antwort noch einmal.");
+    box.appendChild(fb);
+    if(part.confidence){ box.appendChild(renderConfidence(part, st)); }
+  }
+  return box;
+}
+
+function gradeShortText(part, st){
+  const val = st.shortTextValue || "";
+  const isCorrect = (part.accepted || []).some(term => fuzzyMatch(val, term));
+  st.correctness = isCorrect;
+  st.earnedPoints = isCorrect ? part.points : 0;
+}
+
+/* =====================================================================
+   5) BEWERTUNGSLOGIK ZAHLENAUFGABEN
+   ===================================================================== */
+function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+function computeDependValue(field, st){
+  // Berechnet den "Folgewert", der sich aus der (ggf. falschen) Vorantwort
+  // des Lernenden ergeben würde – für die Berücksichtigung von Folgefehlern.
+  if(!field.dependsOn) return null;
+  const prevRaw = st.fieldValues[field.dependsOn];
+  const prevVal = parseNum(prevRaw);
+  if(isNaN(prevVal)) return null;
+
+  if(field.dependFactor !== undefined){
+    return round2(prevVal * field.dependFactor);
+  }
+  if(field.dependAdd !== undefined){
+    return round2(prevVal + field.dependAdd);
+  }
+  if(field.dependFormula === "constDividedByPrev"){
+    // z. B. Umschlag = Wareneinsatz ÷ Lagerbestand, oder Lagerdauer = 360 ÷ Umschlag.
+    // Die Konstante (Wareneinsatz, 360 Tage, …) steht je Feld in field.dependConstant.
+    if(!prevVal) return null;
+    return round2(field.dependConstant / prevVal);
+  }
+  if(field.dependFormula === "percentOfField"){
+    // Prozentwert von prevVal bezogen auf ein ANDERES Feld DERSELBEN Teilaufgabe
+    // (z. B. Handelsspanne = Rohgewinn ÷ Nettoverkaufspreis × 100).
+    const baseRaw = st.fieldValues[field.dependBaseField];
+    const baseVal = parseNum(baseRaw);
+    const base = isNaN(baseVal) ? (field.dependFallback !== undefined ? field.dependFallback : 100) : baseVal;
+    if(!base) return null;
+    return round2((prevVal / base) * 100);
+  }
+  if(field.dependFormula === "percentOfConstant"){
+    // Prozentwert von prevVal bezogen auf eine feste Konstante (z. B. unveränderter NVP).
+    if(!field.dependConstant) return null;
+    return round2((prevVal / field.dependConstant) * 100);
+  }
+  if(field.dependFormula === "lagerzinsenFormula"){
+    // Lagerzinsen = Lagerbestand (prevVal) × Zinssatz × Lagerdauer (Zweitfeld) ÷ 360.
+    const extraVal = parseNum(st.fieldValues[field.dependExtraField]);
+    if(isNaN(extraVal)) return null;
+    const zinssatz = field.dependZinssatz !== undefined ? field.dependZinssatz : 6;
+    return round2(prevVal * (zinssatz / 100) * extraVal / 360);
+  }
+  return null;
+}
+
+function gradeNumberGroup(part, st){
+  const results = {};
+  let total = 0;
+  let anyCorrect = false, anyWrong = false;
+
+  part.fields.forEach(f => {
+    // Punktwert je Feld: entweder individuell (f.points) oder einheitlich (part.fieldPointsEach).
+    const ptsPer = f.points !== undefined ? f.points : part.fieldPointsEach;
+    const raw = st.fieldValues[f.id];
+    const val = parseNum(raw);
+    let status, earned;
+
+    if(isNaN(val)){
+      status = "wrong"; earned = 0;
+    } else if(Math.abs(val - f.expected) <= f.tol){
+      status = "correct"; earned = ptsPer;
+    } else {
+      // Folgefehler-Prüfung: passt der Wert zum eigenen (ggf. falschen) Vorwert?
+      const followVal = computeDependValue(f, st);
+      if(followVal !== null && Math.abs(val - followVal) <= Math.max(f.tol, 0.03)){
+        status = "partial"; earned = round2(ptsPer * 0.5);
+      } else {
+        status = "wrong"; earned = 0;
+      }
+    }
+    results[f.id] = { status, earned };
+    total += earned;
+    if(status === "correct") anyCorrect = true;
+    if(status === "wrong") anyWrong = true;
+  });
+
+  st._fieldResults = results;
+  st.earnedPoints = round2(total);
+  // correctness fürs Sicherheits-Mismatch: "true" wenn mind. 80% der Punkte erreicht,
+  // "false" wenn weniger als 50% erreicht, sonst neutral (undefined).
+  const ratio = st.earnedPoints / part.points;
+  st.correctness = ratio >= 0.8 ? true : (ratio < 0.5 ? false : "mid");
+}
+
+/* =====================================================================
+   6) TIMER
+   ===================================================================== */
+let timerInterval = null;
+
+function startTimerIfNeeded(){
+  if(state.started && !state.finished && !timerInterval){
+    timerInterval = setInterval(tick, 1000);
+  }
+}
+function tick(){
+  if(state.remainingSeconds > 0){
+    state.remainingSeconds -= 1;
+    saveState();
+    renderTimer();
+  }
+}
+function renderTimer(){
+  const box = $("#timerBox");
+  const val = $("#timerValue");
+  const bannerSlot = $("#timeBannerSlot");
+  const s = Math.max(0, state.remainingSeconds);
+  const mm = Math.floor(s / 60).toString().padStart(2, "0");
+  const ss = Math.floor(s % 60).toString().padStart(2, "0");
+  val.textContent = `${mm}:${ss}`;
+
+  box.classList.remove("warn", "critical");
+  bannerSlot.innerHTML = "";
+
+  if(!state.started || state.finished){ return; }
+
+  if(s <= 0){
+    box.classList.add("critical");
+    const b = document.createElement("div");
+    b.className = "time-banner red";
+    b.textContent = "Die vorgesehene Bearbeitungszeit ist abgelaufen. Beenden Sie die aktuelle Aufgabe und erstellen Sie anschließend Ihre Auswertung.";
+    bannerSlot.appendChild(b);
+  } else if(s <= 5*60){
+    box.classList.add("critical");
+    const b = document.createElement("div");
+    b.className = "time-banner orange";
+    b.textContent = "Noch 5 Minuten Bearbeitungszeit. Kommen Sie zu einem Ergebnis.";
+    bannerSlot.appendChild(b);
+  } else if(s <= 15*60){
+    box.classList.add("warn");
+    const b = document.createElement("div");
+    b.className = "time-banner yellow";
+    b.textContent = "Noch 15 Minuten Bearbeitungszeit.";
+    bannerSlot.appendChild(b);
+  } else if(s <= 30*60){
+    const b = document.createElement("div");
+    b.className = "time-banner neutral";
+    b.textContent = "Noch 30 Minuten Bearbeitungszeit.";
+    bannerSlot.appendChild(b);
+  }
+}
+
+/* =====================================================================
+   7) AUSWERTUNG / DASHBOARD
+   ===================================================================== */
+const AREA_ORDER = ["beschaffung", "warenannahme", "lager", "inventur", "kalkulation", "transfer"];
+
+function computeAreaScores(){
+  const areas = {};
+  CONFIG.tasks.forEach(task => {
+    if(!areas[task.area]){
+      areas[task.area] = { name: task.areaName, earned: 0, max: 0, flags: { fehlvorstellung: false, instabil: false } };
+    }
+    task.parts.forEach(part => {
+      const st = state.parts[part.id];
+      areas[task.area].earned += (st.diagEarned || 0);
+      areas[task.area].max += part.points;
+
+      // Fehlvorstellungs-/Instabilitäts-Erkennung nur für Teile mit Sicherheits-Einschätzung
+      // (verwendet bewusst die eingefrorenen Diagnosewerte des ERSTEN Versuchs)
+      if(st.diagConfidence){
+        if(st.diagCorrectness === false && st.diagConfidence === "sicher"){
+          areas[task.area].flags.fehlvorstellung = true;
+        }
+        if(st.diagCorrectness === true && st.diagConfidence === "geraten"){
+          areas[task.area].flags.instabil = true;
+        }
+      }
+    });
+  });
+  return areas;
+}
+
+// Detaildiagnose je Unterthema (Kapitel 19). Ein Unterthema kann sich aus
+// mehreren Teilaufgaben zusammensetzen (z. B. "Vollmachten") oder – bei der
+// Lagerkennzahlen-Aufgabe – aus einzelnen Feldern EINER Teilaufgabe
+// (Lagerumschlag und Lagerdauer werden gemeinsam berechnet, aber getrennt
+// diagnostiziert). Verwendet durchgehend die eingefrorenen Diagnosewerte.
+function computeTopicScores(){
+  const topics = {};
+  function addTopic(name, earned, max, confidence, correctness){
+    if(!name) return;
+    if(!topics[name]) topics[name] = { earned: 0, max: 0, flags: { fehlvorstellung: false, instabil: false } };
+    topics[name].earned += earned;
+    topics[name].max += max;
+    if(confidence){
+      if(correctness === false && confidence === "sicher") topics[name].flags.fehlvorstellung = true;
+      if(correctness === true && confidence === "geraten") topics[name].flags.instabil = true;
+    }
+  }
+
+  CONFIG.tasks.forEach(task => task.parts.forEach(part => {
+    const st = state.parts[part.id];
+    const hasFieldTopics = part.kind === "numberGroup" && part.fields.some(f => f.topic);
+    if(hasFieldTopics){
+      part.fields.forEach(f => {
+        const topicName = f.topic || part.topic;
+        const res = st._diagFieldResults ? st._diagFieldResults[f.id] : null;
+        const earned = res ? res.earned : 0;
+        const maxForField = f.points !== undefined ? f.points : part.fieldPointsEach;
+        addTopic(topicName, earned, maxForField, st.diagConfidence, st.diagCorrectness);
+      });
+    } else {
+      addTopic(part.topic, st.diagEarned || 0, part.points, st.diagConfidence, st.diagCorrectness);
+    }
+  }));
+  return topics;
+}
+
+function bandFor(pct){
+  if(pct >= 80) return "green";
+  if(pct >= 60) return "yellow";
+  return "red";
+}
+
+function renderResults(){
+  const areas = computeAreaScores();
+  const topics = computeTopicScores();
+
+  let totalEarned = 0, totalMax = 0;
+  CONFIG.tasks.forEach(t => t.parts.forEach(p => { totalEarned += (state.parts[p.id].diagEarned || 0); totalMax += p.points; }));
+  const totalPct = totalMax > 0 ? Math.round((totalEarned/totalMax)*100) : 0;
+
+  $("#totalPct").textContent = totalPct + " %";
+  $("#totalText").textContent = `${round2(totalEarned)} von ${totalMax} Diagnosepunkten`;
+  $("#scoreRing").style.setProperty("--pct", totalPct);
+
+  const areaResultsEl = $("#areaResults");
+  areaResultsEl.innerHTML = "";
+
+  AREA_ORDER.forEach(key => {
+    const a = areas[key];
+    if(!a) return;
+    const pct = a.max > 0 ? Math.round((a.earned/a.max)*100) : 0;
+    const band = bandFor(pct);
+    const clickable = a.earned < a.max;
+
+    const card = document.createElement("div");
+    card.className = "area-card " + band + (clickable ? " clickable" : "");
+    card.innerHTML = `
+      <div class="row1">
+        <div>
+          <div class="name">${a.name}</div>
+          <span class="area-tag ${band}">${CONFIG.bandText[band]}</span>
+        </div>
+        <div class="area-pct">${round2(a.earned)} von ${a.max} Punkten – ${pct} %</div>
+      </div>
+      <div class="area-note">${areaMessage(key, band)}</div>
+    `;
+    if(a.flags.fehlvorstellung){
+      const f = document.createElement("div"); f.className = "flag-note";
+      f.textContent = "Achtung: In diesem Bereich könnten sich Fehlvorstellungen eingeschlichen haben.";
+      card.appendChild(f);
+    }
+    if(a.flags.instabil){
+      const f = document.createElement("div"); f.className = "flag-note";
+      f.textContent = "Die Ergebnisse sind gut, aber Ihr Wissen scheint noch nicht stabil abrufbar zu sein.";
+      card.appendChild(f);
+    }
+    if(clickable){
+      const hint = document.createElement("div");
+      hint.className = "review-link-hint";
+      hint.textContent = "Eigene Antworten & Musterlösung ansehen →";
+      card.appendChild(hint);
+      card.addEventListener("click", () => reviewArea(key));
+    }
+    areaResultsEl.appendChild(card);
+  });
+
+  // Detaildiagnose je Unterthema
+  const topicOrder = Object.keys(CONFIG.lernhinweise); // feste, sinnvolle Reihenfolge
+  const topicResultsEl = $("#topicResults");
+  topicResultsEl.innerHTML = "";
+  const topicScores = [];
+  topicOrder.forEach(name => {
+    const t = topics[name];
+    if(!t || t.max <= 0) return;
+    const pct = Math.round((t.earned/t.max)*100);
+    const band = bandFor(pct);
+    const clickable = t.earned < t.max;
+    topicScores.push({ name, pct, flags: t.flags });
+
+    const row = document.createElement("div");
+    row.className = "area-card " + band + (clickable ? " clickable" : "");
+    row.style.padding = "10px 14px";
+    row.style.margin = "6px 0";
+    row.innerHTML = `
+      <div class="row1">
+        <div class="name" style="font-size:14.5px;">${name}</div>
+        <div class="area-pct" style="font-size:14px;">${round2(t.earned)}/${t.max} · ${pct} % · ${CONFIG.bandText[band]}</div>
+      </div>
+    `;
+    if(t.flags.fehlvorstellung){
+      const f = document.createElement("div"); f.className = "flag-note";
+      f.textContent = "Mögliche Fehlvorstellung – überprüfen Sie dieses Thema gezielt.";
+      row.appendChild(f);
+    }
+    if(t.flags.instabil){
+      const f = document.createElement("div"); f.className = "flag-note";
+      f.textContent = "Das Ergebnis ist richtig, aber Ihr Wissen scheint noch nicht sicher abrufbar zu sein.";
+      row.appendChild(f);
+    }
+    if(clickable){
+      const hint = document.createElement("div");
+      hint.className = "review-link-hint";
+      hint.style.marginTop = "6px";
+      hint.textContent = "Eigene Antwort & Musterlösung ansehen →";
+      row.appendChild(hint);
+      row.addEventListener("click", () => reviewTopic(name));
+    }
+    topicResultsEl.appendChild(row);
+  });
+
+  // Lernplan: die drei schwächsten Unterthemen (Kapitel 20)
+  const sortedTopics = [...topicScores].sort((a,b) => a.pct - b.pct).slice(0,3);
+  const lernplanList = $("#lernplanList");
+  lernplanList.innerHTML = "";
+  sortedTopics.forEach((s, i) => {
+    const item = document.createElement("div");
+    item.className = "lernplan-item";
+    item.innerHTML = `<span class="rank">${i+1}.</span><strong>${s.name}</strong><div style="margin-top:4px;">${CONFIG.lernhinweise[s.name] || ""}</div>`;
+    lernplanList.appendChild(item);
+  });
+}
+
+// Springt aus der Auswertung zurück in eine Aufgabe (Backlink) und hebt dort
+// alle Teilaufgaben hervor, die nicht die volle Punktzahl erreicht haben.
+function reviewArea(areaKey){
+  const idx = CONFIG.tasks.findIndex(t => t.area === areaKey);
+  if(idx < 0) return;
+  reviewHighlightParts = CONFIG.tasks[idx].parts
+    .filter(p => (state.parts[p.id].diagEarned || 0) < p.points)
+    .map(p => p.id);
+  if(reviewHighlightParts.length === 0){
+    reviewHighlightParts = CONFIG.tasks[idx].parts.map(p => p.id);
+  }
+  reviewTaskIndex = idx;
+  render();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+// Findet zu einem Unterthema die zugehörige Aufgabe und alle beteiligten
+// Teilaufgaben (auch wenn das Unterthema nur einzelne Felder einer
+// numberGroup-Teilaufgabe betrifft, wie bei Lagerumschlag/Lagerdauer).
+function locateTopic(topicName){
+  let taskIndex = -1;
+  let partIds = [];
+  CONFIG.tasks.forEach((t, ti) => {
+    t.parts.forEach(p => {
+      const hasFieldTopics = p.kind === "numberGroup" && p.fields.some(f => f.topic);
+      const matches = hasFieldTopics
+        ? p.fields.some(f => (f.topic || p.topic) === topicName)
+        : p.topic === topicName;
+      if(matches){
+        partIds.push(p.id);
+        if(taskIndex < 0) taskIndex = ti;
+      }
+    });
+  });
+  return { taskIndex, partIds };
+}
+
+// Springt aus der Detaildiagnose zurück zur passenden Teilaufgabe (Backlink).
+function reviewTopic(topicName){
+  const { taskIndex, partIds } = locateTopic(topicName);
+  if(taskIndex < 0) return;
+  reviewHighlightParts = partIds;
+  reviewTaskIndex = taskIndex;
+  render();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function areaMessage(key, band){
+  const messages = {
+    beschaffung: {
+      green: "Meldebestand, Mindestbestand und Beschaffungsdaten sitzen sicher.",
+      yellow: "Festigen Sie insbesondere die Berechnung und Interpretation des Meldebestandes.",
+      red: "Sie sollten Meldebestand, Mindestbestand und Beschaffungsplanung gezielt üben."
+    },
+    warenannahme: {
+      green: "Warenannahme und Umgang mit Vertragsstörungen sitzen sicher.",
+      yellow: "Festigen Sie insbesondere das Vorgehen bei mangelhaften oder unvollständigen Lieferungen.",
+      red: "Sie sollten Warenannahme, Abweichungserkennung und Vertragsstörungen gezielt üben."
+    },
+    lager: {
+      green: "Lagerkennzahlen und Lageroptimierung sitzen sicher.",
+      yellow: "Festigen Sie insbesondere Lagerumschlag, Lagerdauer und Lagerzinsen.",
+      red: "Sie sollten die Lagerkennzahlen (Bestand, Umschlag, Dauer, Zinsen) gezielt üben."
+    },
+    inventur: {
+      green: "Inventurdifferenzen, Datenanalyse und Vollmachten sitzen sicher.",
+      yellow: "Festigen Sie insbesondere die Berechnung und Interpretation von Inventurdifferenzen.",
+      red: "Sie sollten Inventurdifferenzen, Renner-/Penner-Analyse und Vollmachten gezielt üben."
+    },
+    kalkulation: {
+      green: "Netto/Brutto, Rohgewinn und Handelsspanne sitzen sicher.",
+      yellow: "Festigen Sie insbesondere die Berechnung der Handelsspanne auf Basis des Nettoverkaufspreises.",
+      red: "Sie sollten Netto/Brutto-Umrechnung, Rohgewinn und Handelsspanne gezielt üben."
+    },
+    transfer: {
+      green: "Der komplexe Transferfall gelingt sicher – Zusammenhänge werden gut erkannt.",
+      yellow: "Festigen Sie insbesondere das Erklären von Zusammenhängen zwischen mehreren Problemen.",
+      red: "Sie sollten den Transfer mehrerer betrieblicher Kennzahlen zu einer Gesamtbeurteilung gezielt üben."
+    }
+  };
+  return (messages[key] && messages[key][band]) || "";
+}
+
+/* =====================================================================
+   8) EVENT-HANDLER / NAVIGATION
+   ===================================================================== */
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  render();
+  startTimerIfNeeded();
+
+  $("#chkSelfDirected").addEventListener("change", (e) => {
+    $("#btnStart").disabled = !e.target.checked;
+  });
+
+  $("#btnStart").addEventListener("click", () => {
+    state.started = true;
+    state.timerRunning = true;
+    saveState();
+    startTimerIfNeeded();
+    render();
+  });
+
+  $("#btnBack").addEventListener("click", () => {
+    if(state.finished){
+      if(reviewTaskIndex > 0){ reviewTaskIndex -= 1; render(); window.scrollTo({top:0, behavior:"smooth"}); }
+    } else if(state.currentTask > 0){
+      state.currentTask -= 1; saveState(); render(); window.scrollTo({top:0, behavior:"smooth"});
+    }
+  });
+  $("#btnNext").addEventListener("click", () => {
+    if(state.finished){
+      if(reviewTaskIndex < CONFIG.tasks.length - 1){ reviewTaskIndex += 1; render(); }
+    } else if(state.currentTask < CONFIG.tasks.length - 1){
+      state.currentTask += 1; saveState(); render();
+    } else {
+      finishTrainer();
+    }
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+  $("#btnFinishEarly").addEventListener("click", () => {
+    const unanswered = countUnansweredParts();
+    if(unanswered > 0){
+      const sure = confirm(
+        `Sie haben noch ${unanswered} Teilaufgabe(n) nicht bearbeitet. Unbeantwortete Teilaufgaben werden in der Auswertung mit 0 Punkten gewertet.\n\nMöchten Sie den Trainer trotzdem jetzt beenden und zur Auswertung springen?`
+      );
+      if(!sure) return;
+    }
+    finishTrainer();
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+  $("#btnBackToResults").addEventListener("click", () => {
+    reviewTaskIndex = null;
+    reviewHighlightParts = [];
+    render();
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+
+  $("#btnShowLernplan").addEventListener("click", () => {
+    $("#lernplanBox").style.display = "block";
+    $("#btnShowLernplan").style.display = "none";
+  });
+
+  $("#btnPrint").addEventListener("click", () => window.print());
+
+  $("#btnSaveFile").addEventListener("click", () => {
+    $("#saveFileCard").style.display = "block";
+  });
+  $("#btnDoSaveFile").addEventListener("click", saveResultToFile);
+
+  $("#btnRestart").addEventListener("click", restartTrainer);
+  $("#btnRestartGlobal").addEventListener("click", restartTrainer);
+});
+
+function countUnansweredParts(){
+  // Eine Teilaufgabe gilt als "unbearbeitet", solange ihr erster Versuch
+  // noch nicht für die Diagnose gewertet wurde.
+  let count = 0;
+  CONFIG.tasks.forEach(t => t.parts.forEach(p => {
+    const st = state.parts[p.id];
+    if(!st.diagLocked) count += 1;
+  }));
+  return count;
+}
+
+function finishTrainer(){
+  state.finished = true;
+  state.timerRunning = false;
+  reviewTaskIndex = null;
+  reviewHighlightParts = [];
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+  saveState();
+  render();
+}
+
+function restartTrainer(){
+  const sure = confirm("Möchten Sie wirklich alle Eingaben und Ergebnisse dieses Trainers löschen?");
+  if(!sure) return;
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+  localStorage.removeItem(STORAGE_KEY);
+  state = createFreshState();
+  reviewTaskIndex = null;
+  reviewHighlightParts = [];
+  render();
+}
+
+function saveResultToFile(){
+  const areas = computeAreaScores();
+  const topics = computeTopicScores();
+  let totalEarned = 0, totalMax = 0;
+  CONFIG.tasks.forEach(t => t.parts.forEach(p => { totalEarned += (state.parts[p.id].diagEarned || 0); totalMax += p.points; }));
+  const totalPct = totalMax > 0 ? Math.round((totalEarned/totalMax)*100) : 0;
+  const tag = ($("#studentTag").value || "").trim();
+  const now = new Date();
+  const dateStr = now.toLocaleString("de-DE");
+
+  let lines = [];
+  lines.push("GAP 2 Trainer 03 – Warenfluss, Lager & Warenwirtschaft");
+  lines.push("Ergebnisdatei (lokal, nicht übertragen)");
+  lines.push("Hinweis: Es zählt jeweils der erste Bewertungsversuch je Teilaufgabe.");
+  lines.push("Hinweis: 100 Punkte sind Diagnosepunkte, keine Schulnote.");
+  lines.push("Datum: " + dateStr);
+  if(tag) lines.push("Name/Kürzel: " + tag);
+  lines.push("");
+  lines.push(`Gesamt: ${round2(totalEarned)} von ${totalMax} Punkten (${totalPct} %)`);
+  lines.push("");
+  lines.push("Bereichsergebnisse:");
+  AREA_ORDER.forEach(key => {
+    const a = areas[key];
+    if(!a) return;
+    const pct = a.max > 0 ? Math.round((a.earned/a.max)*100) : 0;
+    const band = bandFor(pct);
+    lines.push(`- ${a.name}: ${round2(a.earned)}/${a.max} Punkte (${pct} %) – ${CONFIG.bandText[band]}`);
+    if(a.flags.fehlvorstellung) lines.push("  Hinweis: mögliche Fehlvorstellung erkannt");
+    if(a.flags.instabil) lines.push("  Hinweis: Wissen evtl. noch nicht stabil abrufbar");
+  });
+
+  lines.push("");
+  lines.push("Unterthemen (Detaildiagnose):");
+  const topicOrder = Object.keys(CONFIG.lernhinweise);
+  const topicScoresForFile = [];
+  topicOrder.forEach(name => {
+    const t = topics[name];
+    if(!t || t.max <= 0) return;
+    const pct = Math.round((t.earned/t.max)*100);
+    const band = bandFor(pct);
+    topicScoresForFile.push({ name, pct });
+    lines.push(`- ${name}: ${round2(t.earned)}/${t.max} Punkte (${pct} %) – ${CONFIG.bandText[band]}`);
+    if(t.flags.fehlvorstellung) lines.push("  Hinweis: mögliche Fehlvorstellung erkannt");
+    if(t.flags.instabil) lines.push("  Hinweis: Wissen evtl. noch nicht stabil abrufbar");
+  });
+
+  lines.push("");
+  lines.push("Sicherheitseinschätzungen je Teilaufgabe (erster Versuch):");
+  CONFIG.tasks.forEach(t => t.parts.forEach(p => {
+    const st = state.parts[p.id];
+    if(st.diagConfidence){
+      lines.push(`- ${p.title}: Sicherheit = ${st.diagConfidence}, Punkte = ${round2(st.diagEarned||0)}/${p.points}`);
+    }
+  }));
+
+  lines.push("");
+  lines.push("Lernempfehlungen (3 schwächste Unterthemen):");
+  const weakest = [...topicScoresForFile].sort((a,b) => a.pct - b.pct).slice(0,3);
+  weakest.forEach((s, i) => {
+    lines.push(`${i+1}. ${s.name}: ${CONFIG.lernhinweise[s.name] || ""}`);
+  });
+
+  const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const fileTag = tag ? tag.replace(/[^a-zA-Z0-9_-]/g, "") : "Ergebnis";
+  a.href = url;
+  a.download = `GAP2_Trainer02_${fileTag}_${now.toISOString().slice(0,10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
